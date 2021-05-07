@@ -19,17 +19,6 @@ namespace dl
         const std::vector<int> shape; /*<! The shape of element */
 
         Constant(const T *element, const int exponent, const std::vector<int> shape);
-
-        /**
-         * @brief Take numpy for example, this function print Constant[y_start:y_end, x_start:x_end, c]
-         * 
-         * @param y_start 
-         * @param y_end 
-         * @param x_start 
-         * @param x_end 
-         * @param c
-         */
-        void print2d(const int y_start, const int y_end, const int x_start, const int x_end, const int c, const char *message) const;
     };
 
     /**
@@ -47,6 +36,14 @@ namespace dl
         const std::vector<int> dilation;
         std::vector<int> shape_with_dilation;
         Filter(const T *element, const int exponent, const std::vector<int> shape, const std::vector<int> dilation = {1, 1});
+
+        /**
+         * @brief Print the n-th filter
+         * 
+         * @param n 
+         * @param message 
+         */
+        void print2d_n(const int n, const char *message) const;
     };
 
     /**
@@ -62,25 +59,25 @@ namespace dl
     };
 
     /**
-     * @brief 
+     * @brief
      * 
      * @tparam T 
      */
     template <typename T>
-    class ReLU : public Constant<T>
+    class Activation : public Constant<T>
     {
     public:
-        const relu_type_t type; /*<! The type of ReLU */
+        const activation_type_t type; /*<! The type of activation */
 
         /**
-         * @brief Construct a new ReLU object
+         * @brief Construct a new Activation object
          * 
-         * @param type      ReLU type including RELU, LEAKY_RELU, PRELU
-         * @param element   element of ReLU
+         * @param type      Linear, ReLU, LeakyReLU, PReLU
+         * @param element   element of activation
          * @param exponent  exponent of element
          * @param shape     shape of element
          */
-        ReLU(const relu_type_t type, const T *element = NULL, const int exponent = 0, const std::vector<int> shape = {0});
+        Activation(const activation_type_t type, const T *element = NULL, const int exponent = 0, const std::vector<int> shape = {0});
     };
 
 } // namespace dl

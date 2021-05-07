@@ -8,6 +8,18 @@
 #define DL_SPIRAM_SUPPORT 0
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#define CONFIG_XTENSA_BOOST 1
+#else
+#define CONFIG_XTENSA_BOOST 0
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32S3
+#define CONFIG_TIE_BOOST 1
+#else
+#define CONFIG_TIE_BOOST 0
+#endif
+
 #define DL_Q16_MIN (-32768)
 #define DL_Q16_MAX (32767)
 #define DL_Q8_MIN (-128)
@@ -33,15 +45,16 @@ namespace dl
 {
     typedef enum
     {
-        RELU,       /*<! ReLU */
-        LEAKY_RELU, /*<! Leaky_ReLU */
-        PRELU,      /*<! PReLU */
-    } relu_type_t;
+        Linear,    /*<! Linear >*/
+        ReLU,      /*<! ReLU >*/
+        LeakyReLU, /*<! LeakyReLU >*/
+        PReLU,     /*<! PReLU >*/
+    } activation_type_t;
 
     typedef enum
     {
-        PADDING_VALID,     /*<! VALID */
-        PADDING_SAME,      /*<! SAME in TensorFlow style */
-        PADDING_SAME_MXNET /*<! SAME in MXNET style */
+        PADDING_VALID,     /*<! VALID >*/
+        PADDING_SAME,      /*<! SAME in TensorFlow style >*/
+        PADDING_SAME_MXNET /*<! SAME in MXNET style >*/
     } padding_type_t;
 } // namespace dl

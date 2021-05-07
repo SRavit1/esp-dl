@@ -32,15 +32,6 @@ namespace dl
         Feature();
 
         /**
-         * @brief Construct a new Feature object from a input feature
-         * 
-         * @param feature 
-         * @param padding 
-         * @param auto_free 
-         */
-        Feature(Feature<T> &feature, std::vector<int> padding, const bool auto_free = true);
-
-        /**
          * @brief Construct a new Feature object by copying input feature
          * 
          * @param feature 

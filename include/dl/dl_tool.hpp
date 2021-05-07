@@ -8,9 +8,15 @@
 #include "dl_constant.hpp"
 #include "dl_variable.hpp"
 #include "sdkconfig.h"
+#include "esp_system.h"
+#include "esp_timer.h"
 
 #if DL_SPIRAM_SUPPORT
 #include "freertos/FreeRTOS.h"
+#endif
+#if CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/cache.h"
+#include "soc/extmem_reg.h"
 #endif
 
 namespace dl
@@ -32,10 +38,11 @@ namespace dl
             if (NULL == res)
             {
 #if DL_SPIRAM_SUPPORT
-                //printf("Size need: %d, left: %d\n", total_size, heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL));
-                //heap_caps_print_heap_info(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+                // printf("Size need: %d, left: %d\n", total_size, heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL));
+                // heap_caps_print_heap_info(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
                 res = heap_caps_malloc(total_size, MALLOC_CAP_SPIRAM);
             }
+
             if (NULL == res)
             {
                 printf("Item psram alloc failed. Size: %d = %d x %d + %d + %d\n", total_size, cnt, size, align, sizeof(void *));
@@ -150,8 +157,11 @@ namespace dl
          * 
          * @param array 
          */
-        static inline void print_vector(std::vector<int> &array)
+        static inline void print_vector(std::vector<int> &array, const char *message = NULL)
         {
+            if (message)
+                printf("%s: ", message);
+
             printf("[");
             for (int i = 0; i < array.size(); i++)
             {
@@ -231,21 +241,6 @@ namespace dl
             return true;
         }
 
-        /**
-         * @brief Get the cycle count
-         * 
-         * @return uint32_t 
-         */
-        static inline uint32_t get_ccount()
-        {
-            uint32_t ccount;
-            __asm__ __volatile__("rsr %0, ccount"
-                                 : "=a"(ccount)
-                                 :
-                                 : "memory");
-            return ccount;
-        }
-
         class Latency
         {
         private:
@@ -255,20 +250,12 @@ namespace dl
         public:
             void start()
             {
-#if DEBUG_ON_PC
-#else
-                // this->__start = esp_timer_get_time();
-                this->__start = get_ccount();
-#endif
+                this->__start = esp_timer_get_time();
             }
 
             void end()
             {
-#if DEBUG_ON_PC
-#else
-                // this->__end = esp_timer_get_time();
-                this->__end = get_ccount();
-#endif
+                this->__end = esp_timer_get_time();
             }
 
             int period()
@@ -281,7 +268,7 @@ namespace dl
                 if (message)
                     printf("%-15s ", message);
 
-                printf("latency: %15d cycles\n", this->period());
+                printf("latency: %15d us\n", this->period());
             }
         };
     } // namespace tool
@@ -300,7 +287,7 @@ namespace dl
          * @return std::vector<int> output shape 
          */
         std::vector<int> get_output_shape(const std::vector<int> &input_shape, const std::vector<int> &filter_shape, const int stride_y, const int stride_x, const padding_type_t pad_type, const bool depthwise);
-        
+
         /**
          * @brief Get the pad size object
          * 
@@ -447,4 +434,57 @@ namespace dl
             return math_atan2f(math_newton_sqrt(1.0 - x * x), x);
         }
     } // namespace mathtool
+
+    namespace cachetool
+    {
+        /**
+         * @brief           Init preload. call this function to turn on or turn off the preload.  
+         * 
+         * @param preload   1: turn on the preload. 0: turn off the preload.
+         * @return int8_t 
+         *                  1: Init sucessfully.
+         *                  0: Init suceesfully, autoload has been turned off.
+         *                  -1: Init failed, the chip does not support preload.
+         */
+        int8_t preload_init(uint8_t preload = 1);
+
+        /**
+         * @brief           Call preload.
+         * 
+         * @param addr      The start address of data to be preloaded.
+         * @param size      The size(btyes) of the data to be preloaded.
+         */
+        void preload_func(uint32_t addr, uint32_t size);
+
+        /**
+         * @brief           Init autoload. call this function to turn on or turn off the autoload.  
+         * 
+         * @param autoload  1: turn on the autoload. 0: turn off the autoload.
+         * @param trigger   0: miss. 1: hit. 2: both
+         * @param linesize  the number of cache lines to be autoloaded.
+         * @return int8_t  
+         *                  1: Init sucessfully.
+         *                  0: Init suceesfully, preload has been turned off.
+         *                  -1: Init failed, the chip does not support autoload.
+         */
+        int8_t autoload_init(uint8_t autoload = 1, uint8_t trigger = 2, uint8_t linesize = 0);
+
+        /**
+         * @brief           Call autoload.           
+         * 
+         * @param addr1     The start address of data1 to be autoloaded.
+         * @param size1     The size(btyes) of the data1 to be preloaded.
+         * @param addr2     The start address of data2 to be autoloaded.
+         * @param size2     The size(btyes) of the data2 to be preloaded.
+         */
+        void autoload_func(uint32_t addr1, uint32_t size1, uint32_t addr2, uint32_t size2);
+
+        /**
+         * @brief           Call autoload. 
+         * 
+         * @param addr1     The start address of data1 to be autoloaded.
+         * @param size1     The size(btyes) of the data1 to be preloaded.
+         */
+        void autoload_func(uint32_t addr1, uint32_t size1);
+    }
 } // namespace dl

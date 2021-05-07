@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include "detector.hpp"
+#include "dl_advance_detector_anchor_point.hpp"
 
-class CatFaceDetector : public DetectorAnchorPoint<int16_t, int16_t>
+class CatFaceDetector : public dl::advance::DetectorAnchorPoint<int16_t, int16_t>
 {
 public:
     /**
@@ -16,7 +16,7 @@ public:
      * @param top_k             The k highest score boxes will be remained 
      */
     CatFaceDetector(std::vector<int> input_shape, float resize_scale, const float score_threshold, const float nms_threshold, const int top_k);
-    
+
     /**
      * @brief Destroy the Cat Face Detector object
      * 
