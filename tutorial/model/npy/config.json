@@ -1,125 +1,115 @@
 {
     "l1": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -2, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -2,
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l2_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l2_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -3
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -3
+    },
     "l3_a_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_a_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -12
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -12
+    },
     "l3_b_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_b_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -12
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -12
+    },
     "l3_c_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_c_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -12
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -12
+    },
     "l3_d_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_d_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -11
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -11
+    },
     "l3_e_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_e_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -12
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -12
+    },
     "l4_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "leaky_relu", 
-            "exponent": -99
+            "type": "LeakyReLU"
         }
-    }, 
+    },
     "l4_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -11
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -11
+    },
     "l5_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "leaky_relu", 
-            "exponent": -99
+            "type": "LeakyReLU"
         }
-    }, 
+    },
     "l5_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -9
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -9
     }
 }

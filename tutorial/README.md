@@ -1,6 +1,6 @@
 # Tutorial
 
-This tutorial will teaching you with an example to build your own model with ESP-FACE step by step. The example is a model for MNIST classification.
+This tutorial will teach you with an example to build your own model with ESP-FACE step by step. The example is a model for MNIST classification.
 
 
 
@@ -22,18 +22,19 @@ numpy.save(file=f'{root}/{layer_name}_bias.npy', arr=bias)     # bias must be nu
 
 #### Step 2: Write Model Configuration
 
-Write a config.json file for model configuration layer by layer, the format is 
+Write a config.json file for the model configuration layer by layer, the format is 
 
 ```json
 {
     "layer_name": {             // must be the same as the corresponding npy file
-        "type": "conv2d",       // "conv2d", "depthwise_conv2d", "global_depthwise_conv2d" only by now
-        "filter": -99,          // exponent of filter. If it equals to -99, the convert tool will select an exponent to project filter to whole quantization range.
-        "element_width": 16,    // quantization element width
-        "bias": -10,            // exponent of bias, which must be equal to output's
+        "operation": "conv2d",  // "conv2d" or "depthwise_conv2d"
+        "filter_exponent": -10, // exponent of filter. This can be settled automatically be remove this item.
+        "output_type": "s16",   // data type of output, "s16" or "s8"
+        "bias": "True",			// "True": with bias, "False": without bias
+        "output_exponent": -10, // exponent of output. Take a not that the exponent of bias must be equal to output's
         "activation": {
-            "type": "relu"      // "relu", "leaky_relu" only by now
-            "exponent": -99
+            "type": "LeakyReLU" // "ReLU", "LeakyReLU", "PReLU" or with no activation by removing "activation"
+            "exponent": -16		// exponent of activation if it has
         }
     }, 
     ... ...
@@ -45,127 +46,117 @@ Write a config.json file for model configuration layer by layer, the format is
 ```json
 {
     "l1": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -3, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -2,
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l2_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l2_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -2
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -3
+    },
     "l3_a_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_a_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -13
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -12
+    },
     "l3_b_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_b_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -13
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -12
+    },
     "l3_c_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_c_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -13
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -12
+    },
     "l3_d_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_d_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -12
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -11
+    },
     "l3_e_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "relu"
+            "type": "ReLU"
         }
-    }, 
+    },
     "l3_e_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -13
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -12
+    },
     "l4_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "leaky_relu", 
-            "exponent": -99
+            "type": "LeakyReLU"
         }
-    }, 
+    },
     "l4_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -11
-    }, 
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -11
+    },
     "l5_depth": {
-        "type": "depthwise_conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
+        "operation": "depthwise_conv2d",
+        "output_type": "s16",
         "activation": {
-            "type": "leaky_relu", 
-            "exponent": -99
+            "type": "LeakyReLU"
         }
-    }, 
+    },
     "l5_compress": {
-        "type": "conv2d", 
-        "filter": -99, 
-        "element_width": 16, 
-        "bias": -10
+        "operation": "conv2d",
+        "output_type": "s16",
+        "bias": "True",
+        "output_exponent": -9
     }
 }
 ```
@@ -174,29 +165,30 @@ Write a config.json file for model configuration layer by layer, the format is
 
 #### Step 3: Convert Model Coefficient
 
-Make sure that coefficient npy files and configuration file are ready and in the same folder. Then, `convert.py` can help to convert coefficient into C++ code.
-
-```python
-# -i: where the coefficient and configuration files saved
-# -n: generated filename
-# -o: where the generated file saved
-python convert.py -i input_root/ -n filename -o output_root/
-```
+Make sure that coefficient npy files and configuration file are all ready and in the same folder. Then, [convert.py](../convert.py) can help to convert coefficient into C/C++ code.
 
 **e.g.** 
 
 ```python
-# under tutorial root
-python ../convert.py -i ./model/npy/ -n mnist_coefficient -o ./model/
+# -t: target chip: esp32, esp32s2, esp32s3, esp32c3
+# -i: where the coefficient and configuration files saved
+# -n: generated coefficient filename
+# -o: where the generated coefficient file saved
+# under the tutorial root
+python ../convert.py -t esp32s3 -i ./model/npy -n mnist_coefficient -o ./model
 ```
 
-`mnist_coefficient.cpp` and `mnist_coefficient.hpp` can be found in `./model/`
+After that, `mnist_coefficient.cpp` and `mnist_coefficient.hpp` can be found in `./model/`
+
+**Or**
+
+Add command into [CMakeLists.txt](./main/CMakeLists.txt#L4) file so that the coefficient files could be generated accordingly when compile.
 
 
 
 #### Step 4: Build Model
 
-Build a model by deriving Model class in `"dl_layer_model.hpp"`. Two pure abstract functions have to be implemented:
+Build a model by deriving `Model` class in `"dl_layer_model.hpp"`. Two pure abstract functions have to be implemented:
 
 `void build(Feature<input_t> &input)`: for passing on the change of shape and padding layer by layer
 
@@ -240,24 +232,24 @@ private:
 
 public:
     Conv2D<int16_t, int16_t> l5_compress;
-    MNIST() : l1(Conv2D<int16_t, int16_t>(-3, get_l1_filter(), get_l1_bias(), get_l1_relu(), PADDING_VALID, 2, 2, "l1")),
-              l2_depth(DepthwiseConv2D<int16_t, int16_t>(-1, get_l2_depth_filter(), NULL, get_l2_depth_relu(), PADDING_SAME, 2, 2, "l2_depth")),
-              l2_compress(Conv2D<int16_t, int16_t>(-2, get_l2_compress_filter(), get_l2_compress_bias(), NULL, PADDING_SAME, 1, 1, "l2_compress")),
-              l3_a_depth(DepthwiseConv2D<int16_t, int16_t>(-1, get_l3_a_depth_filter(), NULL, get_l3_a_depth_relu(), PADDING_VALID, 1, 1, "l3_a_depth")),
-              l3_a_compress(Conv2D<int16_t, int16_t>(-13, get_l3_a_compress_filter(), get_l3_a_compress_bias(), NULL, PADDING_VALID, 1, 1, "l3_a_compress")),
-              l3_b_depth(DepthwiseConv2D<int16_t, int16_t>(-1, get_l3_b_depth_filter(), NULL, get_l3_b_depth_relu(), PADDING_VALID, 1, 1, "l3_b_depth")),
-              l3_b_compress(Conv2D<int16_t, int16_t>(-13, get_l3_b_compress_filter(), get_l3_b_compress_bias(), NULL, PADDING_VALID, 1, 1, "l3_b_compress")),
-              l3_c_depth(DepthwiseConv2D<int16_t, int16_t>(-13, get_l3_c_depth_filter(), NULL, get_l3_c_depth_relu(), PADDING_SAME, 1, 1, "l3_c_depth")),
-              l3_c_compress(Conv2D<int16_t, int16_t>(-13, get_l3_c_compress_filter(), get_l3_c_compress_bias(), NULL, PADDING_SAME, 1, 1, "l3_c_compress")),
-              l3_d_depth(DepthwiseConv2D<int16_t, int16_t>(-12, get_l3_d_depth_filter(), NULL, get_l3_d_depth_relu(), PADDING_SAME, 1, 1, "l3_d_depth")),
-              l3_d_compress(Conv2D<int16_t, int16_t>(-12, get_l3_d_compress_filter(), get_l3_d_compress_bias(), NULL, PADDING_SAME, 1, 1, "l3_d_compress")),
-              l3_e_depth(DepthwiseConv2D<int16_t, int16_t>(-11, get_l3_e_depth_filter(), NULL, get_l3_e_depth_relu(), PADDING_SAME, 1, 1, "l3_e_depth")),
-              l3_e_compress(Conv2D<int16_t, int16_t>(-13, get_l3_e_compress_filter(), get_l3_e_compress_bias(), NULL, PADDING_SAME, 1, 1, "l3_e_compress")),
+    MNIST() : l1(Conv2D<int16_t, int16_t>(-2, get_l1_filter(), get_l1_bias(), get_l1_activation(), PADDING_VALID, 2, 2, "l1")),
+              l2_depth(DepthwiseConv2D<int16_t, int16_t>(-1, get_l2_depth_filter(), NULL, get_l2_depth_activation(), PADDING_SAME, 2, 2, "l2_depth")),
+              l2_compress(Conv2D<int16_t, int16_t>(-3, get_l2_compress_filter(), get_l2_compress_bias(), NULL, PADDING_SAME, 1, 1, "l2_compress")),
+              l3_a_depth(DepthwiseConv2D<int16_t, int16_t>(-1, get_l3_a_depth_filter(), NULL, get_l3_a_depth_activation(), PADDING_VALID, 1, 1, "l3_a_depth")),
+              l3_a_compress(Conv2D<int16_t, int16_t>(-12, get_l3_a_compress_filter(), get_l3_a_compress_bias(), NULL, PADDING_VALID, 1, 1, "l3_a_compress")),
+              l3_b_depth(DepthwiseConv2D<int16_t, int16_t>(-2, get_l3_b_depth_filter(), NULL, get_l3_b_depth_activation(), PADDING_VALID, 1, 1, "l3_b_depth")),
+              l3_b_compress(Conv2D<int16_t, int16_t>(-12, get_l3_b_compress_filter(), get_l3_b_compress_bias(), NULL, PADDING_VALID, 1, 1, "l3_b_compress")),
+              l3_c_depth(DepthwiseConv2D<int16_t, int16_t>(-12, get_l3_c_depth_filter(), NULL, get_l3_c_depth_activation(), PADDING_SAME, 1, 1, "l3_c_depth")),
+              l3_c_compress(Conv2D<int16_t, int16_t>(-12, get_l3_c_compress_filter(), get_l3_c_compress_bias(), NULL, PADDING_SAME, 1, 1, "l3_c_compress")),
+              l3_d_depth(DepthwiseConv2D<int16_t, int16_t>(-12, get_l3_d_depth_filter(), NULL, get_l3_d_depth_activation(), PADDING_SAME, 1, 1, "l3_d_depth")),
+              l3_d_compress(Conv2D<int16_t, int16_t>(-11, get_l3_d_compress_filter(), get_l3_d_compress_bias(), NULL, PADDING_SAME, 1, 1, "l3_d_compress")),
+              l3_e_depth(DepthwiseConv2D<int16_t, int16_t>(-11, get_l3_e_depth_filter(), NULL, get_l3_e_depth_activation(), PADDING_SAME, 1, 1, "l3_e_depth")),
+              l3_e_compress(Conv2D<int16_t, int16_t>(-12, get_l3_e_compress_filter(), get_l3_e_compress_bias(), NULL, PADDING_SAME, 1, 1, "l3_e_compress")),
               l3_concat("l3_concat"),
-              l4_depth(DepthwiseConv2D<int16_t, int16_t>(-12, get_l4_depth_filter(), NULL, get_l4_depth_leaky_relu(), PADDING_VALID, 1, 1, "l4_depth")),
+              l4_depth(DepthwiseConv2D<int16_t, int16_t>(-12, get_l4_depth_filter(), NULL, get_l4_depth_activation(), PADDING_VALID, 1, 1, "l4_depth")),
               l4_compress(Conv2D<int16_t, int16_t>(-11, get_l4_compress_filter(), get_l4_compress_bias(), NULL, PADDING_VALID, 1, 1, "l4_compress")),
-              l5_depth(DepthwiseConv2D<int16_t, int16_t>(-11, get_l5_depth_filter(), NULL, get_l5_depth_leaky_relu(), PADDING_VALID, 1, 1, "l5_depth")),
-              l5_compress(Conv2D<int16_t, int16_t>(-10, get_l5_compress_filter(), get_l5_compress_bias(), NULL, PADDING_VALID, 1, 1, "l5_compress")) {}
+              l5_depth(DepthwiseConv2D<int16_t, int16_t>(-10, get_l5_depth_filter(), NULL, get_l5_depth_activation(), PADDING_VALID, 1, 1, "l5_depth")),
+              l5_compress(Conv2D<int16_t, int16_t>(-9, get_l5_compress_filter(), get_l5_compress_bias(), NULL, PADDING_VALID, 1, 1, "l5_compress")) {}
 
     void build(Feature<int16_t> &input)
     {
@@ -287,7 +279,6 @@ public:
     {
         this->l1.call(input);
         input.free_element();
-        this->l1.output.print2d(0, 10, 0, 10, 0, "l1_output");
 
         this->l2_depth.call(this->l1.output);
         this->l1.output.free_element();
@@ -346,9 +337,9 @@ public:
 
 #### Step 5: Run Model
 
-Create a model object and run its forward()
+Create a model object and run its `forward()` function
 
-**e.g.** `./main/main.cpp`
+**e.g.** `./main/app_main.cpp`
 
 ```c++
 #include <stdio.h>
@@ -395,7 +386,20 @@ flash and monitor
 ```bash
 $ idf.py -p /dev/ttyUSB0 flash monitor # NOTICE: please select a right device
 
--7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851, 
-Prediction Result: 9
+// esp32
+// -7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851,
+// Prediction Result: 9
+
+// esp32s2
+// -7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851
+// Prediction Result: 9
+
+// esp32s3
+// -7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851
+// Prediction Result: 9
+
+// esp32c3
+// -7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851
+// Prediction Result: 9
 ```
 

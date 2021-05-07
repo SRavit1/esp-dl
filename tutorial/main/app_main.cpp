@@ -5,11 +5,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "dl_tool.hpp"
 #include "mnist_model.hpp"
 
 /**
- * @brief Conv2D_3x3 is not compatible with input channel less than 3 on ESP32-S3-beta2/beta3. 
- * So the example input channel is repeated into 3, i.e. the input shape is [28, 28, 3].
+ * @brief Samples in MNIST dataset are repeated in channel to mimic RGB image. 
  * 
  */
 __attribute__((aligned(16))) int16_t example_element[] = {0, 0, 0, 0, 0, 0, 0, 0,
@@ -313,9 +313,14 @@ extern "C" void app_main(void)
     Feature<int16_t> input;
     input.set_element((int16_t *)example_element).set_exponent(0).set_shape({28, 28, 3}).set_auto_free(false);
 
-    // model forward
     MNIST model;
+
+    dl::tool::Latency latency;
+
+    // model forward
+    latency.start();
     model.forward(input);
+    latency.end();
 
     // parse
     int16_t *score = model.l5_compress.output.get_element_ptr();
@@ -332,6 +337,27 @@ extern "C" void app_main(void)
             max_index = i;
         }
     }
-    // (-7175, -9797, -12315, -11419, -12361, -1369, -11728, -113, -11453, 7859)
     printf("\nPrediction Result: %d\n", max_index);
+
+    latency.print();
+
+    // PC
+    // -7175, -9797, -12315, -11419, -12361, -1369, -11728, -113, -11453, 7859
+    // Prediction Result: 9
+
+    // esp32
+    // -7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851,
+    // Prediction Result: 9
+
+    // esp32s2
+    // -7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851
+    // Prediction Result: 9
+
+    // esp32s3
+    // -7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851
+    // Prediction Result: 9
+
+    // esp32c3
+    // -7166, -9783, -12293, -11405, -12351, -1363, -11715, -116, -11436, 7851
+    // Prediction Result: 9
 }
