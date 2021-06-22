@@ -2,6 +2,7 @@ set(COMPONENT_SRCS
     app_main.cpp
     app_facenet.c
     app_camera.cpp
+    facenet_full_prec.cpp
     )
 
 set(COMPONENT_ADD_INCLUDEDIRS
@@ -14,3 +15,8 @@ set(COMPONENT_REQUIRES
     )
 
 register_component()
+
+target_link_libraries(${COMPONENT_TARGET} "-L ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib")
+target_link_libraries(${COMPONENT_TARGET}
+    dl
+    )

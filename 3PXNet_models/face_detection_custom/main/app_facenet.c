@@ -88,7 +88,6 @@ void task_process (void *arg)
 
         /* 5. Do face detection */
 
-        //===== 3PXNet Code Start=====
         box_array_t *net_boxes = face_detect(image_matrix, &mtmn_config);
         ESP_LOGI(TAG, "Detection time consumption: %lldms", (esp_timer_get_time() - fb_get_time) / 1000);
 
@@ -101,7 +100,6 @@ void task_process (void *arg)
             dl_lib_free(net_boxes->landmark);
             dl_lib_free(net_boxes);
         }
-        //===== 3PXNet Code Finish=====
 
         dl_matrix3du_free(image_matrix);
 

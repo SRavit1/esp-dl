@@ -28,6 +28,11 @@
 extern "C" {
 #endif
 
+//#define FACENET_ESP_DEFAULT
+#define FACENET_FULL_PREC
+//#define FACENET_QUANTIZED //...not implemented yet
+//#define FACENET_3PXNet //...not implemented yet
+
 #include "fd_forward.h"
 #include "image_util.h"
 #include "app_camera.h"
