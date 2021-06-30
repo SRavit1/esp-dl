@@ -6,6 +6,9 @@
 #include "dl_lib_matrix3d.h"
 #include "mtmn.h"
 #include "fd_forward.h"
+#include "esp_log.h"
+
+static const char *TAG = "app_process";
 
 //Docstrings and headers taken from mtmn.h
 /**
@@ -15,6 +18,7 @@
  * @return          Scores for every pixel, and box offset with respect.
  */
 mtmn_net_t *pnet_lite_f(dl_matrix3du_t *in) {
+    ESP_LOGI(TAG, "Custom pnet called!");
 	dl_matrix3d_t *out_conv_1 = dl_matrix3duf_conv_common(in, &pnet_conv2d_kernel1, &pnet_conv2d_bias1, 1, 1, PADDING_VALID);
     dl_matrix3d_relu(out_conv_1);
     dl_matrix3d_t *out_pool_1 = dl_matrix3d_pooling(out_conv_1, 2, 2, 2, 2, PADDING_SAME, DL_POOLING_MAX);
@@ -51,6 +55,7 @@ mtmn_net_t *pnet_lite_f(dl_matrix3du_t *in) {
  * @return          Scores for every box, and box offset with respect.
  */
 mtmn_net_t *rnet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
+    ESP_LOGI(TAG, "Custom rnet called!");
     dl_matrix3d_t *out_conv_1 = dl_matrix3duf_conv_common(in, &rnet_conv2d_kernel1, &rnet_conv2d_bias1, 1, 1, PADDING_VALID);
     dl_matrix3d_relu(out_conv_1);
     dl_matrix3d_t *out_pool_1 = dl_matrix3d_pooling(out_conv_1, 2, 2, 2, 2, PADDING_SAME, DL_POOLING_MAX);
@@ -108,6 +113,7 @@ mtmn_net_t *rnet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
  * @return          Scores for every box, box offset, and landmark with respect.
  */
 mtmn_net_t *onet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
+    ESP_LOGI(TAG, "Custom onet called!");
     dl_matrix3d_t *out_conv_1 = dl_matrix3duf_conv_common(in, &onet_conv2d_kernel1, &onet_conv2d_bias1, 1, 1, PADDING_VALID);
     dl_matrix3d_relu(out_conv_1);
     dl_matrix3d_t *out_pool_1 = dl_matrix3d_pooling(out_conv_1, 3, 3, 2, 2, PADDING_SAME, DL_POOLING_MAX);
