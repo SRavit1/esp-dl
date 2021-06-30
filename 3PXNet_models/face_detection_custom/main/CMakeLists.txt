@@ -3,6 +3,7 @@ set(COMPONENT_SRCS
     app_facenet.c
     app_camera.cpp
     facenet_full_prec.cpp
+    fd_forward.c
     )
 
 set(COMPONENT_ADD_INCLUDEDIRS
