@@ -1,0 +1,14 @@
+(in esp-who directory)
+==
+./install.sh
+
+. ./export.sh
+
+(in project directory)
+==
+idf.py build
+
+idf.py flash -p /dev/ttyUSB0
+
+idf.py monitor -p /dev/ttyUSB0
+
