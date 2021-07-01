@@ -4,6 +4,8 @@
 #include "fd_forward.h"
 #include "esp_log.h"
 
+#include "printUtils.h"
+
 static const char *TAG = "app_process";
 
 //Docstrings and headers taken from mtmn.h
@@ -17,6 +19,7 @@ mtmn_net_t *pnet_lite_f(dl_matrix3du_t *in) {
     ESP_LOGI(TAG, "Custom pnet called!");
 	dl_matrix3d_t *out_conv_1 = dl_matrix3duf_conv_common(in, &pnet_conv2d_kernel1, &pnet_conv2d_bias1, 1, 1, PADDING_VALID);
     dl_matrix3d_relu(out_conv_1);
+
     dl_matrix3d_t *out_pool_1 = dl_matrix3d_pooling(out_conv_1, 2, 2, 2, 2, PADDING_SAME, DL_POOLING_MAX);
 
     dl_matrix3d_t *out_conv_2 = dl_matrix3dff_conv_common(out_pool_1, &pnet_conv2d_kernel2, &pnet_conv2d_bias2, 1, 1, PADDING_VALID);
@@ -27,11 +30,13 @@ mtmn_net_t *pnet_lite_f(dl_matrix3du_t *in) {
 
     dl_matrix3d_t *category = dl_matrix3dff_conv_common(out_conv_3, &pnet_conv2d_kernel4, &pnet_conv2d_bias4, 1, 1, PADDING_VALID);
     dl_matrix3d_softmax(category); //TODO: How to indicate that this should be done over axis 3?
+
     dl_matrix3d_t *offset = dl_matrix3dff_conv_common(out_conv_3, &pnet_conv2d_kernel5, &pnet_conv2d_bias5, 1, 1, PADDING_VALID);
 
     //TODO: Call free as soon as tensors are no longer live
     dl_matrix3d_free(out_conv_1);
-    dl_matrix3d_free(out_pool_1);
+    //TODO: The following statement causes problems
+    //dl_matrix3d_free(out_pool_1);
     dl_matrix3d_free(out_conv_2);
     dl_matrix3d_free(out_conv_3);
 
@@ -58,10 +63,11 @@ mtmn_net_t *rnet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
 
     dl_matrix3d_t *out_conv_2 = dl_matrix3dff_conv_common(out_pool_1, &rnet_conv2d_kernel2, &rnet_conv2d_bias2, 1, 1, PADDING_VALID);
     dl_matrix3d_relu(out_conv_2);
-    dl_matrix3d_t *out_pool_2 = dl_matrix3d_pooling(out_conv_2, 2, 2, 2, 2, PADDING_SAME, DL_POOLING_MAX);
 
+    dl_matrix3d_t *out_pool_2 = dl_matrix3d_pooling(out_conv_2, 2, 2, 2, 2, PADDING_VALID, DL_POOLING_MAX);
     dl_matrix3d_t *out_conv_3 = dl_matrix3dff_conv_common(out_pool_2, &rnet_conv2d_kernel3, &rnet_conv2d_bias3, 1, 1, PADDING_VALID);
     dl_matrix3d_relu(out_conv_3);
+
 
     //flatten out_conv_3 for matrix multiplication
     out_conv_3->c = out_conv_3->h*out_conv_3->w*out_conv_3->c;
@@ -81,9 +87,9 @@ mtmn_net_t *rnet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
 
     //TODO: Call free as soon as tensors are no longer live
     dl_matrix3d_free(out_conv_1);
-    dl_matrix3d_free(out_pool_1);
+    //dl_matrix3d_free(out_pool_1);
     dl_matrix3d_free(out_conv_2);
-    dl_matrix3d_free(out_pool_2);
+    //dl_matrix3d_free(out_pool_2);
     dl_matrix3d_free(out_conv_3);
     dl_matrix3d_free(out_dense_1);
 
@@ -146,9 +152,9 @@ mtmn_net_t *onet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
 
     //TODO: Call free as soon as tensors are no longer live
     dl_matrix3d_free(out_conv_1);
-    dl_matrix3d_free(out_pool_1);
+    //dl_matrix3d_free(out_pool_1);
     dl_matrix3d_free(out_conv_2);
-    dl_matrix3d_free(out_pool_2);
+    //dl_matrix3d_free(out_pool_2);
     dl_matrix3d_free(out_conv_3);
     dl_matrix3d_free(out_dense_1);
 

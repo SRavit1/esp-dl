@@ -7,37 +7,39 @@
 #include "dl_lib_matrix3d.h"
 #include "mtmn.h"
 
-void printMatrix(dl_matrix3d_t* mat) {
-    if (!mat) return;
-    if (mat->item) {
-        for (int i = 0; i < mat->h * mat->w * mat->c; i++) {
-            printf("%f ", mat->item[i]);
-            if (i%8 == 0) printf("\n");
-        }
-    }
-}
-
-void printOutput(mtmn_net_t* out) {
-    if (!out) return;
-    printf("Printing network output START===");
-    printMatrix(out->category);
-    printMatrix(out->offset);
-    printMatrix(out->landmark);
-    printf("Printing network output END===");
-}
+#include "printUtils.h"
 
 void test(void *arg)
 {
-    dl_matrix3du_t *input = dl_matrix3du_alloc(1, 12, 12, 3);
-    for (int i = 0; i < input->h * input->w; i++)
+    dl_matrix3du_t *p_net_input = dl_matrix3du_alloc(1, 12, 12, 3);
+    for (int i = 0; i < p_net_input->h * p_net_input->w * p_net_input->c; i++)
     {
-        input->item[i] = 1;
+        p_net_input->item[i] = 1;
+    }
+    dl_matrix3du_t *r_net_input = dl_matrix3du_alloc(1, 24, 24, 3);
+    for (int i = 0; i < r_net_input->h * r_net_input->w * r_net_input->c; i++)
+    {
+        r_net_input->item[i] = 1;
+    }
+    dl_matrix3du_t *o_net_input = dl_matrix3du_alloc(1, 48, 48, 3);
+    for (int i = 0; i < o_net_input->h * o_net_input->w * o_net_input->c; i++)
+    {
+        o_net_input->item[i] = 1;
     }
 
     while(1)
     {
-        mtmn_net_t* result = pnet_lite_f(input);
-        printOutput(result);
+        mtmn_net_t* p_net_result = pnet_lite_f(p_net_input);
+        printOutput(p_net_result);
+
+
+        mtmn_net_t* r_net_result = rnet_lite_f_with_score_verify(r_net_input, 0);
+        printOutput(r_net_result);
+
+
+
+        mtmn_net_t* o_net_result = onet_lite_f_with_score_verify(o_net_input, 0);
+        printOutput(o_net_result);
 
 
         vTaskDelay(100);
