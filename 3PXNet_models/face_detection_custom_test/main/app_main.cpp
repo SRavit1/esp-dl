@@ -9,6 +9,8 @@
 
 #include "printUtils.h"
 
+#define QUANT
+
 void test(void *arg)
 {
     dl_matrix3du_t *p_net_input = dl_matrix3du_alloc(1, 12, 12, 3);
@@ -29,18 +31,32 @@ void test(void *arg)
 
     while(1)
     {
-        mtmn_net_t* p_net_result = pnet_lite_f(p_net_input);
+        mtmn_net_t *p_net_result, *r_net_result, *o_net_result;
+/*
+#ifdef QUANT
+        p_net_result = pnet_lite_q(p_net_input, DL_C_IMPL);
+#else
+        p_net_result = pnet_lite_f(p_net_input);
+#endif
+        
         printOutput(p_net_result);
 
 
-        mtmn_net_t* r_net_result = rnet_lite_f_with_score_verify(r_net_input, 0);
+
+#ifdef QUANT
+        r_net_result = rnet_lite_q_with_score_verify(r_net_input, 0, DL_C_IMPL);
+#else
+        r_net_result = rnet_lite_f_with_score_verify(r_net_input, 0);
+#endif
         printOutput(r_net_result);
+*/
 
-
-
-        mtmn_net_t* o_net_result = onet_lite_f_with_score_verify(o_net_input, 0);
+#ifdef QUANT
+        o_net_result = onet_lite_q_with_score_verify(o_net_input, 0, DL_C_IMPL);
+#else
+        o_net_result = onet_lite_f_with_score_verify(o_net_input, 0);
+#endif
         printOutput(o_net_result);
-
 
         vTaskDelay(100);
     }

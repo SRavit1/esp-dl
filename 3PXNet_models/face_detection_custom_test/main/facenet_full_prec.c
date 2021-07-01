@@ -16,7 +16,7 @@ static const char *TAG = "app_process";
  * @return          Scores for every pixel, and box offset with respect.
  */
 mtmn_net_t *pnet_lite_f(dl_matrix3du_t *in) {
-    ESP_LOGI(TAG, "Custom pnet called!");
+    ESP_LOGI(TAG, "Custom pnet_lite_f called!");
 
     int64_t time_start = esp_timer_get_time();
     
@@ -79,7 +79,7 @@ mtmn_net_t *pnet_lite_f(dl_matrix3du_t *in) {
  * @return          Scores for every box, and box offset with respect.
  */
 mtmn_net_t *rnet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
-    ESP_LOGI(TAG, "Custom rnet called!");
+    ESP_LOGI(TAG, "Custom rnet_lite_f_with_score_verify called!");
 
     int64_t time_start = esp_timer_get_time();
 
@@ -167,7 +167,7 @@ mtmn_net_t *rnet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
  * @return          Scores for every box, box offset, and landmark with respect.
  */
 mtmn_net_t *onet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
-    ESP_LOGI(TAG, "Custom onet called!");
+    ESP_LOGI(TAG, "Custom onet_lite_f_with_score_verify called!");
 
     int64_t time_start = esp_timer_get_time();
 
@@ -264,55 +264,3 @@ mtmn_net_t *onet_lite_f_with_score_verify(dl_matrix3du_t *in, float threshold) {
 
     return result;
 }
-
-/**
- * @brief Forward the pnet process, coarse detection. Calculate in quantization.
- *
- * @param in        Image matrix, rgb888 format, size is 320x240
- * @return          Scores for every pixel, and box offset with respect.
- */
-mtmn_net_t *pnet_lite_q(dl_matrix3du_t *in, dl_conv_mode mode) { ESP_LOGI(TAG, "Custom pnet called!"); return 0; }
-
-/**
- * @brief Forward the rnet process, fine determine the boxes from pnet. Calculate in quantization.
- *
- * @param in        Image matrix, rgb888 format
- * @param threshold Score threshold to detect human face
- * @return          Scores for every box, and box offset with respect.
- */
-mtmn_net_t *rnet_lite_q_with_score_verify(dl_matrix3du_t *in, float threshold, dl_conv_mode mode) { ESP_LOGI(TAG, "Custom rnet called!"); return 0; }
-
-/**
- * @brief Forward the onet process, fine determine the boxes from rnet. Calculate in quantization.
- *
- * @param in        Image matrix, rgb888 format
- * @param threshold Score threshold to detect human face
- * @return          Scores for every box, box offset, and landmark with respect.
- */
-mtmn_net_t *onet_lite_q_with_score_verify(dl_matrix3du_t *in, float threshold, dl_conv_mode mode) { ESP_LOGI(TAG, "Custom onet called!"); return 0; }
-
-/**
- * @brief Forward the pnet process, coarse detection. Calculate in quantization.
- *
- * @param in        Image matrix, rgb888 format, size is 320x240
- * @return          Scores for every pixel, and box offset with respect.
- */
-mtmn_net_t *pnet_heavy_q(dl_matrix3du_t *in, dl_conv_mode mode) { ESP_LOGI(TAG, "Custom pnet called!"); return 0; }
-
-/**
- * @brief Forward the rnet process, fine determine the boxes from pnet. Calculate in quantization.
- *
- * @param in        Image matrix, rgb888 format
- * @param threshold Score threshold to detect human face
- * @return          Scores for every box, and box offset with respect.
- */
-mtmn_net_t *rnet_heavy_q_with_score_verify(dl_matrix3du_t *in, float threshold, dl_conv_mode mode) { ESP_LOGI(TAG, "Custom rnet called!"); return 0; }
-
-/**
- * @brief Forward the onet process, fine determine the boxes from rnet. Calculate in quantization.
- *
- * @param in        Image matrix, rgb888 format
- * @param threshold Score threshold to detect human face
- * @return          Scores for every box, box offset, and landmark with respect.
- */
-mtmn_net_t *onet_heavy_q_with_score_verify(dl_matrix3du_t *in, float threshold, dl_conv_mode mode) { ESP_LOGI(TAG, "Custom onet called!"); return 0; }
