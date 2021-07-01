@@ -12,3 +12,4 @@ idf.py flash -p /dev/ttyUSB0
 
 idf.py monitor -p /dev/ttyUSB0
 
+kill -9 $(ps -ef | grep monitor.py | head -n 1 | awk '{print $2}')
