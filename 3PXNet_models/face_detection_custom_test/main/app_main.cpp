@@ -32,7 +32,7 @@ void test(void *arg)
     while(1)
     {
         mtmn_net_t *p_net_result, *r_net_result, *o_net_result;
-/*
+
 #ifdef QUANT
         p_net_result = pnet_lite_q(p_net_input, DL_C_IMPL);
 #else
@@ -49,7 +49,6 @@ void test(void *arg)
         r_net_result = rnet_lite_f_with_score_verify(r_net_input, 0);
 #endif
         printOutput(r_net_result);
-*/
 
 #ifdef QUANT
         o_net_result = onet_lite_q_with_score_verify(o_net_input, 0, DL_C_IMPL);
@@ -57,6 +56,7 @@ void test(void *arg)
         o_net_result = onet_lite_f_with_score_verify(o_net_input, 0);
 #endif
         printOutput(o_net_result);
+
 
         vTaskDelay(100);
     }
