@@ -2,7 +2,8 @@ set(COMPONENT_SRCS
     app_main.cpp
     app_facenet.c
     app_camera.cpp
-    facenet_full_prec.cpp
+#    facenet_full_prec.c
+#    facenet_full_prec_qu.c
     fd_forward.c
     )
 

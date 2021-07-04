@@ -260,6 +260,10 @@ box_array_t *pnet_forward_fast(dl_matrix3du_t *image, fptp_t min_face, int pyram
 { /*{{{*/
     ESP_LOGI(TAG, "Custom pnet_forward_fast called!");
 
+    int64_t totalTime = 0;
+    int64_t modelTime = 0;
+    int64_t time_start = esp_timer_get_time();
+
     mtmn_net_t *out;
     fptp_t origin_scale = 1.0f * config->w / min_face;
     fptp_t pyramid = 0.707106781; // sqrt(0.5)
@@ -302,6 +306,7 @@ box_array_t *pnet_forward_fast(dl_matrix3du_t *image, fptp_t min_face, int pyram
         resized_image->h = resized_h;
         resized_image->stride = resized_image->w * resized_image->c;
 
+        int64_t model_start = esp_timer_get_time();
 #if CONFIG_MTMN_LITE_FLOAT
         out = pnet_lite_f(resized_image);
 #endif
@@ -313,6 +318,7 @@ box_array_t *pnet_forward_fast(dl_matrix3du_t *image, fptp_t min_face, int pyram
 #if CONFIG_MTMN_HEAVY_QUANT
         out = pnet_heavy_q(resized_image, DL_XTENSA_IMPL);
 #endif
+        modelTime += esp_timer_get_time() - model_start;
 
         if (out)
         {
@@ -376,6 +382,7 @@ box_array_t *pnet_forward_fast(dl_matrix3du_t *image, fptp_t min_face, int pyram
         resized_image->h = resized_h;
         resized_image->stride = resized_image->w * resized_image->c;
 
+        int64_t model_start = esp_timer_get_time();
 #if CONFIG_MTMN_LITE_FLOAT
         out = pnet_lite_f(resized_image);
 #endif
@@ -387,6 +394,7 @@ box_array_t *pnet_forward_fast(dl_matrix3du_t *image, fptp_t min_face, int pyram
 #if CONFIG_MTMN_HEAVY_QUANT
         out = pnet_heavy_q(resized_image, DL_XTENSA_IMPL);
 #endif
+        modelTime += esp_timer_get_time() - model_start;
 
         if (out)
         {
@@ -459,12 +467,20 @@ box_array_t *pnet_forward_fast(dl_matrix3du_t *image, fptp_t min_face, int pyram
     dl_lib_free(sorted_list);
     dl_lib_free(origin_head);
 
+    totalTime = esp_timer_get_time() - time_start;
+    int64_t pre_post_processing_time = totalTime - modelTime;
+    ESP_LOGI(TAG, "pnet_forward_fast pre/post processing time is %lld ms", pre_post_processing_time / 1000);
+
     return pnet_box_list;
 } /*}}}*/
 
 box_array_t *rnet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_config_t *config)
 { /*{{{*/
     ESP_LOGI(TAG, "Custom rnet_forward called!");
+
+    int64_t totalTime = 0;
+    int64_t modelTime = 0;
+    int64_t time_start = esp_timer_get_time();
 
     int valid_count = 0;
     image_list_t valid_list = {NULL};
@@ -494,6 +510,7 @@ box_array_t *rnet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_con
 
         image_resize_linear(resized_image->item, sliced_image->item, config->w, config->h, image->c, w, h);
 
+        int64_t model_start = esp_timer_get_time();
 #if CONFIG_MTMN_LITE_FLOAT
         mtmn_net_t *out = rnet_lite_f_with_score_verify(resized_image, config->threshold.score);
 #endif
@@ -505,6 +522,7 @@ box_array_t *rnet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_con
 #if CONFIG_MTMN_HEAVY_QUANT
         mtmn_net_t *out = rnet_heavy_q_with_score_verify(resized_image, config->threshold.score, DL_XTENSA_IMPL);
 #endif
+        modelTime += esp_timer_get_time() - model_start;
 
         if (out)
         {
@@ -563,12 +581,20 @@ box_array_t *rnet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_con
 
     dl_lib_free(valid_box);
 
+    totalTime = esp_timer_get_time() - time_start;
+    int64_t pre_post_processing_time = totalTime - modelTime;
+    ESP_LOGI(TAG, "rnet_forward_fast pre/post processing time is %lld ms", pre_post_processing_time / 1000);
+
     return net_box_list;
 } /*}}}*/
 
 box_array_t *onet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_config_t *config)
 { /*{{{*/
     ESP_LOGI(TAG, "Custom onet_forward called!");
+
+    int64_t totalTime = 0;
+    int64_t modelTime = 0;
+    int64_t time_start = esp_timer_get_time();
 
     int valid_count = 0;
     image_list_t valid_list = {NULL};
@@ -600,6 +626,7 @@ box_array_t *onet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_con
 
         image_resize_linear(resized_image->item, sliced_image->item, config->w, config->h, image->c, w, h);
 
+        int64_t model_start = esp_timer_get_time();
 #if CONFIG_MTMN_LITE_FLOAT
         mtmn_net_t *out = onet_lite_f_with_score_verify(resized_image, config->threshold.score);
 #endif
@@ -611,6 +638,7 @@ box_array_t *onet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_con
 #if CONFIG_MTMN_HEAVY_QUANT
         mtmn_net_t *out = onet_heavy_q_with_score_verify(resized_image, config->threshold.score, DL_XTENSA_IMPL);
 #endif
+        modelTime += esp_timer_get_time() - model_start;
 
         if (out)
         {
@@ -678,6 +706,10 @@ box_array_t *onet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_con
         net_box_list->len = sorted_list.len;
     }
     dl_lib_free(valid_box);
+
+    totalTime = esp_timer_get_time() - time_start;
+    int64_t pre_post_processing_time = totalTime - modelTime;
+    ESP_LOGI(TAG, "onet_forward_fast pre/post processing time is %lld ms", pre_post_processing_time / 1000);
 
     return net_box_list;
 } /*}}}*/
