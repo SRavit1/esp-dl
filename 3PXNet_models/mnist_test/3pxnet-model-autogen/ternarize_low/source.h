@@ -24,9 +24,10 @@
 static uint8_t l1_act[] = IMAGES ; 
 static uint8_t   labels[] = LABELS; 
 #define F1I  768
-#define F1NPI  0
+#define F1NPI  704
 #define F1O  128
 static pckDtype l1wght[] = _33 ;
+static uint8_t l1ind[] = _33_indices ;
 static pckDtype l1act_bin[F1I/pckWdt]; 
 #define F2I  128
 #define F2NPI  0
@@ -40,13 +41,12 @@ static bnDtype bn2mean[] = _bn2_running_mean ;
 static bnDtype bn2var[] = _bn2_running_var ; 
 static bnDtype bn2gamma[] = _bn2_weight ; 
 static bnDtype bn2beta[] = _bn2_bias ; 
-/*
-int main(){ 
+/*int main(){ 
 	int correct = 0; 
 	for(int img = 0; img < 100; img++) {
 		uint8_t *curr_im = l1_act + img*784*sizeof(uint8_t);
 		packBinThrsArr(curr_im, l1act_bin, F1I, 1);
-		FcXnorWrap(l1act_bin, l1wght, F1I, F1O, l2act_bin, bn1thr, bn1sign);
+		Fc3pxnWrap(l1act_bin, l1wght, l1ind, F1NPI, F1O, l2act_bin, bn1thr, bn1sign);
 		int res = FcXnorNoBinWrap(l2act_bin, l2wght, F2I, F2O, output, bn2mean, bn2var, bn2gamma, bn2beta);
 		float max = -INFINITY; 
 		int maxIdx = 0; 
@@ -62,5 +62,4 @@ int main(){
 	}
 	printf("Accuracy: %f%%\n", 100.0*(float)correct/100); 
 	return (EXIT_SUCCESS); 
-}
-*/
+}*/

@@ -15,10 +15,9 @@ void test(void *arg)
         image->item[i] = input_item_array[i] / 255.0f;
     }
 
-    dl_matrix3d_t* o4_2 = mnist_model(image);
-
     while(1)
     {
+        dl_matrix3d_t* o4_2 = mnist_model(image);
         int idx = 0;
         fptp_t max = o4_2->item[0];
         printf("Result:\n");
