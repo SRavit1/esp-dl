@@ -15,5 +15,6 @@ idf_build_set_property(COMPILE_OPTIONS -DGCC APPEND)
 #idf_build_set_property(COMPILE_OPTIONS -DPCNTSW APPEND)
 
 idf_build_set_property(COMPILE_OPTIONS -Wno-return-type APPEND)
+idf_build_set_property(COMPILE_OPTIONS -Wno-unused-label APPEND)
 
 project(custom_model)

@@ -4,8 +4,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#define INF_LIB_PUBLIC
 //replace last four digits with desired id
-#include "autogen_0000/source.h"
+#include "autogen_0001/source.h"
 
 void test(void *arg)
 {

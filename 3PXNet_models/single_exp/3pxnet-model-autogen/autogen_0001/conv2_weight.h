@@ -1,0 +1,11 @@
+#define _conv2_weight {\
+0xce6e13b8, \
+0xdb1cbfe9, \
+0x2a11eb7e, \
+0xf85690dd, \
+0xdbf8f27, \
+0x76b853ec, \
+0xd102c0e0, \
+0x41692d80, \
+0xceefea6c, \
+}
