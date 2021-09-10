@@ -7,3 +7,6 @@ pnet_model.*
 rnet_model.*
 onet_model.*
 frmn_model.*
+
+*3pxnet-model-autogen*
+*3pxnet-inference-library*
