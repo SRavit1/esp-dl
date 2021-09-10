@@ -55,7 +55,7 @@
  * @return 0 - Success, 1 - Failure
  */
 
-uint8_t Cn3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype * __restrict thresh, pckDtype * sign) {
+uint8_t Cn3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint16_t pad, const uint16_t pool, pckDtype * __restrict thresh, pckDtype * sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
    // Batch Norm present (thresh != NULL)
    if (thresh) {
@@ -82,13 +82,13 @@ uint8_t Cn3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8
          if (pad == 0) {
             // No pooling
             if (pool == 1) {
-               CnBn3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, thresh, sign);
+               CnBn3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, thresh, sign,offset, in_bit, out_bit);
                return 0;
             }
             // Pooling
             else {
                // This should be a non-padded version
-               CnBnPdPl3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, thresh, sign);
+               CnBnPdPl3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, thresh, sign, offset, in_bit, out_bit);
                return 0;
             }
          }
@@ -96,12 +96,12 @@ uint8_t Cn3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8
          else {
             // No pooling
             if (pool == 1) {
-               CnBnPd3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, thresh, sign);
+               CnBnPd3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, thresh, sign, offset, in_bit, out_bit);
                return 0;
             }
             // Pooling
             else {
-               CnBnPdPl3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, thresh, sign);
+               CnBnPdPl3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, thresh, sign, offset, in_bit, out_bit);
                return 0;
             }
          }
@@ -132,23 +132,23 @@ uint8_t Cn3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8
          if (pad == 0) {
             // No pooling
             if (pool == 1) {
-               Cn3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut);
+               Cn3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, in_bit, out_bit);
             }
             // Pooling
             else {
                // This should be changed to non-padded implementations
-               CnPdPl3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool);
+               CnPdPl3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool,in_bit, out_bit);
             }
          }
          // Padding
          else {
             // No pooling
             if (pool == 1) {
-               CnPd3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad);
+               CnPd3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, in_bit, out_bit);
             }
             // Pooling
             else {
-               CnPdPl3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool);
+               CnPdPl3pxn(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool,in_bit, out_bit);
             }
          }
          return 0;
@@ -182,7 +182,7 @@ uint8_t Cn3pxnNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, ui
     const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, 
     const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, 
     bnDtype* __restrict pOut, const uint16_t pad, const uint16_t pool, 
-    bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
+    bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
 
     // Batch Norm present (thresh != NULL)
     if (mean) {
@@ -209,13 +209,13 @@ uint8_t Cn3pxnNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, ui
             if (pad == 0) {
                 // No pooling
                 if (pool == 1) {
-                    CnBn3pxnNoBin(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, mean,var,gamma,beta);
+                    CnBn3pxnNoBin(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, mean,var,gamma,beta,in_bit,out_bit);
                     return 0;
                 }
                 // Pooling
                 else {
                     // This should be a non-padded version
-                    CnBnPdPl3pxnNoBin(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, mean, var, gamma, beta);
+                    CnBnPdPl3pxnNoBin(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, mean, var, gamma, beta,in_bit, out_bit);
                     return 0;
                 }
             }
@@ -223,12 +223,12 @@ uint8_t Cn3pxnNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, ui
             else {
                 // No pooling
                 if (pool == 1) {
-                    CnBnPd3pxnNoBin(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, mean, var, gamma, beta);
+                    CnBnPd3pxnNoBin(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, mean, var, gamma, beta,in_bit, out_bit);
                     return 0;
                 }
                 // Pooling
                 else {
-                    CnBnPdPl3pxnNoBin(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, mean, var, gamma, beta);
+                    CnBnPdPl3pxnNoBin(pAct, pKrn, pInd, kLen, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, mean, var, gamma, beta,in_bit, out_bit);
                     return 0;
                 }
             }
@@ -300,11 +300,12 @@ uint8_t Cn3pxnNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, ui
  * @param[in] knum - number of kernels 
  * @param[out] pOut - pointer to the packed output vector
  */
-void Cn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut) {
+void Cn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
+   pckDtype xnorTmp[in_bit];
+   int32_t  outTemp[in_bit];
+   int out = 0;
    uint8_t  *idxY = malloc(kLen*sizeof(uint8_t));
    uint8_t  *idxX = malloc(kLen*sizeof(uint8_t));
    uint8_t  *idxZ = malloc(kLen*sizeof(uint8_t));
@@ -329,27 +330,37 @@ void Cn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __r
             for (uint16_t x = 0; x < (wdth-kwdt+1); x++) {
                // Need to do that because we'll be oring into it 
                if (ks == 0) {
-                  pOut[y*(wdth-kwdt+1)*knum/pckWdt + x*knum/pckWdt + k] = 0;
+                   for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                       pOut[(y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw] = 0;
+                   }
                }
-               outTemp = 0;
+               //outTemp = 0;
+               memset(outTemp, 0, sizeof(outTemp));
+               out = 0;
                for (uint16_t kl = 0; kl < kLen/pckWdt; kl++) { 
-                  // XNOR multiplication
-                  xnorTmp = ~( pAct[(y+idxY[kl])*yCoeff + (x+idxX[kl])*xCoeff + idxZ[kl]] ^ pKrn[index + kl]);
-                  //
-                  // popcount
-                  xnorTmp = popcount(xnorTmp);
-                  // Accumulation
-                  outTemp += xnorTmp;
+                   for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                       // XNOR multiplication
+                       xnorTmp[bitw] = ~(pAct[((y + idxY[kl]) * yCoeff + (x + idxX[kl]) * xCoeff + idxZ[kl])*in_bit+bitw] ^ pKrn[index + kl]);
+                       //
+                       // popcount
+                       xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+                       // Accumulation
+                       outTemp[bitw] += xnorTmp[bitw];
+                   }
                } // K-len
                // Adjust the output value
-               outTemp = outTemp - (kLen - outTemp);
-               // Binarize
-               outTemp = outTemp >= 0;
-               // Shift based on current kernel slice
-               outTemp = outTemp << (pckWdt-1-ks);
-               // First time writing to a given word, make sure to clear it
-               // Write out
-               pOut[y*(wdth-kwdt+1)*knum/pckWdt + x*knum/pckWdt + k] |= outTemp;
+               for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                   // Adjust the output value
+                   outTemp[bitw] = outTemp[bitw] - (kLen - outTemp[bitw]);
+                   // Get the int full precision value 
+                   out += (outTemp[bitw] << (in_bit - bitw - 1));
+               }
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out >= 0;
+                   // Shift 
+                   pOut[(y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k)*out_bit+bitw] |= (temp << (pckWdt - ks - 1));
+                   out = (temp == 0 ? out + (1 << (out_bit - bitw - 1)) : out - (1 << (out_bit - bitw - 1)));
+               }
             }
          }
          index += kLen/pckWdt;
@@ -375,11 +386,12 @@ void Cn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __r
  * @param[out] pOut - pointer to the packed output vector
  * @param[in] pad  - padding size
  */
-void CnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad) {
+void CnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, uint8_t in_bit, uint8_t out_bit) {
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
+   pckDtype xnorTmp[in_bit];
+   int32_t  outTemp[in_bit];
+   int out = 0;
    uint8_t  *idxY = malloc(kLen*sizeof(uint8_t));
    uint8_t  *idxX = malloc(kLen*sizeof(uint8_t));
    uint8_t  *idxZ = malloc(kLen*sizeof(uint8_t));
@@ -408,9 +420,12 @@ void CnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* _
             for (uint16_t x = 0; x < (wdth-kwdt+2*pad+1); x++) {
                // Need to do that because we'll be oring into it 
                if (ks == 0) {
-                  pOut[y*(wdth-kwdt+2*pad+1)*knum/pckWdt + x*knum/pckWdt + k] = 0;
+                   for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                       pOut[(y * (wdth - kwdt + 2 * pad + 1) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw] = 0;
+                   }
                }
-               outTemp = 0;
+               memset(outTemp, 0, sizeof(outTemp));
+               out = 0;
                xyCount = 0;
                for (uint16_t kl = 0; kl < kLen/pckWdt; kl++) { 
                   idxYY = y+idxY[kl];
@@ -418,22 +433,30 @@ void CnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* _
                   if (!(idxYY < pad || idxXX < pad || idxYY-pad >= hght || idxXX-pad >= wdth)) {
                      xyCount++;
                      // XNOR multiplication
-                     xnorTmp = ~( pAct[(idxYY-pad)*yCoeff + (idxXX-pad)*xCoeff + idxZ[kl]] ^ pKrn[(index + kl)]);
-                     // popcount
-                     xnorTmp = popcount(xnorTmp);
-                     // Accumulation
-                     outTemp += xnorTmp;
+                     for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                         // XNOR multiplication
+                         xnorTmp[bitw] = ~(pAct[((idxYY - pad) * yCoeff + (idxXX - pad) * xCoeff + idxZ[kl]) * in_bit + bitw] ^ pKrn[index + kl]);
+                         //
+                         // popcount
+                         xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+                         // Accumulation
+                         outTemp[bitw] += xnorTmp[bitw];
+                     }
                   }
                } // K-len
                // Adjust the output value
-               outTemp = outTemp - (xyCount*pckWdt - outTemp);
-               // Binarize
-               outTemp = outTemp >= 0;
-               // Shift based on current kernel slice
-               outTemp = outTemp << (pckWdt-1-ks);
-               // First time writing to a given word, make sure to clear it
-               // Write out
-               pOut[y*(wdth-kwdt+2*pad+1)*knum/pckWdt + x*knum/pckWdt + k] |= outTemp;
+               for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                   // Adjust the output value
+                   outTemp[bitw] = outTemp[bitw] - (xyCount * pckWdt - outTemp[bitw]);
+                   // Get the int full precision value 
+                   out += (outTemp[bitw] << (in_bit - bitw - 1));
+               }
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out >= 0;
+                   // Shift 
+                   pOut[(y * (wdth - kwdt + 2 * pad + 1) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw] |= (temp << (pckWdt - ks - 1));
+                   out = (temp == 0 ? out + (1 << (out_bit - bitw - 1)) : out - (1 << (out_bit - bitw - 1)));
+               }
             }
          }
          index += kLen/pckWdt;
@@ -460,11 +483,12 @@ void CnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* _
  * @param[in] pad  - padding size
  * @param[in] pool - pooling window size
  */
-void CnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool) {
+void CnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, uint8_t in_bit, uint8_t out_bit) {
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
+   pckDtype xnorTmp[in_bit];
+   int32_t  outTemp[in_bit];
+   int out = 0;
    uint8_t  *idxY = malloc(kLen*sizeof(uint8_t));
    uint8_t  *idxX = malloc(kLen*sizeof(uint8_t));
    uint8_t  *idxZ = malloc(kLen*sizeof(uint8_t));
@@ -496,11 +520,14 @@ void CnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t*
                maxTemp = -(khgt*kwdt*kdpt);
                // Need to do that because we'll be oring into it 
                if (ks == 0) {
-                  pOut[y*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + x*knum/pckWdt + k] = 0;
+                   for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                       pOut[(y*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + x*knum/pckWdt + k)* out_bit + bitw] = 0;
+                   }                  
                }
                for (uint16_t yy = 0; yy < pool; yy++) {
                   for (uint16_t xx = 0; xx < pool; xx++) {
-                     outTemp = 0;
+                     memset(outTemp, 0, sizeof(outTemp));
+                     out = 0;
                      xyCount = 0;
                      for (uint16_t kl = 0; kl < kLen/pckWdt; kl++) { 
                         idxYY = y*pool+yy+idxY[kl];
@@ -508,26 +535,34 @@ void CnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t*
                         if (!(idxYY < pad || idxXX < pad || idxYY-pad >= hght || idxXX-pad >= wdth)) {
                            xyCount++;
                            // XNOR multiplication
-                           xnorTmp = ~( pAct[(idxYY-pad)*yCoeff + (idxXX-pad)*xCoeff + idxZ[kl]] ^ pKrn[(index + kl)]);
-                           // popcount
-                           xnorTmp = popcount(xnorTmp);
-                           // Accumulation
-                           outTemp += xnorTmp;
+                           for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                               // XNOR multiplication
+                               xnorTmp[bitw] = ~( pAct[((idxYY-pad)*yCoeff + (idxXX-pad)*xCoeff + idxZ[kl]) * in_bit + bitw] ^ pKrn[(index + kl)]);
+                               //
+                               // popcount
+                               xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+                               // Accumulation
+                               outTemp[bitw] += xnorTmp[bitw];
+                           }
                         }
                      } // K-len
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*pckWdt - outTemp);
+                     for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                         // Adjust the output value
+                         outTemp[bitw] = outTemp[bitw] - (xyCount * pckWdt - outTemp[bitw]);
+                         // Get the int full precision value 
+                         out += (outTemp[bitw] << (in_bit - bitw - 1));
+                     }
                      // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                     if (out > maxTemp) { maxTemp = out;}
                   }
                }
                // Binarize
-               maxTemp = maxTemp >= 0;
-               // Shift based on current kernel slice
-               maxTemp = maxTemp << (pckWdt-1-ks);
-               // First time writing to a given word, make sure to clear it
-               // Write out
-               pOut[y*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + x*knum/pckWdt + k] |= maxTemp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = maxTemp >= 0;
+                   // Shift 
+                   pOut[(y * ((wdth - kwdt + 2 * pad + 1) / pool) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw] |= (temp << (pckWdt - ks - 1));
+                   maxTemp = (temp == 0 ? maxTemp + (1 << (out_bit - bitw - 1)) : maxTemp - (1 << (out_bit - bitw - 1)));
+               }
                //goto end;
             }
          }
@@ -555,11 +590,12 @@ void CnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t*
  * @param[in] thresh - pointer to batch normalization threshold (if NULL, Bn is skipped)
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void CnBn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
+void CnBn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
+   pckDtype xnorTmp;
+   int32_t  outTemp;
+   int out = 0;
    uint8_t  *idxY = malloc(kLen*sizeof(uint8_t));
    uint8_t  *idxX = malloc(kLen*sizeof(uint8_t));
    uint8_t  *idxZ = malloc(kLen*sizeof(uint8_t));
@@ -567,7 +603,7 @@ void CnBn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* _
    uint16_t  xCoeff  = dpth/pckWdt;
    uint16_t  kCoeff  = kdpt/pckWdt;
    uint16_t index = 0;
-   pckDtype  signs = 0;
+   pckDtype*  signs = sign;
 
    // Outer loop - kernels
    for (uint16_t k = 0; k<knum/pckWdt; k++) {
@@ -585,47 +621,67 @@ void CnBn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* _
             for (uint16_t x = 0; x < (wdth-kwdt+1); x++) {
                // Need to do that because we'll be oring into it 
                if (ks == 0) {
-                  pOut[y*(wdth-kwdt+1)*knum/pckWdt + x*knum/pckWdt + k] = 0;
+                   for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                       pOut[(y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw] = 0;
+                   }
                }
-               outTemp = 0;
-               for (uint16_t kl = 0; kl < kLen/pckWdt; kl++) { 
-                  // XNOR multiplication
-                  xnorTmp = ~( pAct[(y+idxY[kl])*yCoeff + (x+idxX[kl])*xCoeff + idxZ[kl]] ^ pKrn[index + kl]);
-                  // popcount
-                  xnorTmp = popcount(xnorTmp);
-                  // Accumulation
-                  outTemp += xnorTmp;
-               } // K-len
-               // Adjust the output value
-               outTemp = outTemp - (kLen - outTemp);
+               out = 0;
+               for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                   outTemp = 0;
+                   for (uint16_t kl = 0; kl < kLen / pckWdt; kl++) {
+                       // XNOR multiplication
+                       xnorTmp = ~(pAct[((y + idxY[kl]) * yCoeff + (x + idxX[kl]) * xCoeff + idxZ[kl]) * in_bit + bitw] ^ pKrn[(index + kl)]);
+                       //
+                       // popcount
+                       xnorTmp = popcount(xnorTmp);
+                       // Accumulation
+                       outTemp += xnorTmp;
+                   }// K-len
+                   outTemp = outTemp - (kLen - outTemp);
+                   // Get the int full precision value 
+                   out += (outTemp << (in_bit - bitw - 1));
+               }
                // Binarize
-               outTemp = (bnPrec) outTemp >= *thresh;
-               // Shift based on current kernel slice
-               outTemp = outTemp << (pckWdt-1-ks);
-               // First time writing to a given word, make sure to clear it
-               // Write out
-               pOut[y*(wdth-kwdt+1)*knum/pckWdt + x*knum/pckWdt + k] |= outTemp;
+               int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+               int temp = 0;
+               for (int i = 0; i != in_bit; i++) {
+                   temp |= (1 << i);
+               }
+               temp = temp & out;
+               out_temp += temp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out_temp >= *thresh;
+                   // Shift 
+                   pOut[(y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw] |= (temp << (pckWdt - ks - 1));
+                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+               }
             }
          }
          index += kLen/pckWdt;
          thresh++;
+         offset++;
       }
+      signs++;
    }
-
+   signs = sign;
    // Adjust signs
    // Outer loop - kernels
    for (uint16_t k = 0; k<knum/pckWdt; k++) {
-      // Grab a batch of bn signs for kernels
-      signs = *sign++;
+      // Grab a batch of bn signs for kernels       
       // Y dim
       for (uint16_t y = 0; y < (hght-khgt+1); y++) {
          // X dim
          for (uint16_t x = 0; x < (wdth-kwdt+1); x++) {
-            pOut[y*(wdth-kwdt+1)*knum/pckWdt + x*knum/pckWdt + k] = ~(pOut[y*(wdth-kwdt+1)*knum/pckWdt + x*knum/pckWdt + k] ^ signs);
+             for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                 // Shift 
+                 pOut[(y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw] = ~(pOut[(y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw]^(*signs));
+             }
          }
       }
+      signs++;
    }
-
+   
    free(idxY);
    free(idxX);
    free(idxZ);
@@ -634,11 +690,12 @@ void CnBn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* _
 void CnBn3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pInd, 
     const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, 
     const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, 
-    bnDtype* __restrict pOut, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
+    bnDtype* __restrict pOut, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
 
     // Temporary variables
-    pckDtype xnorTmp = 0;
-    int32_t  outTemp = 0;
+    pckDtype xnorTmp[in_bit];
+    int32_t  outTemp[out_bit];
+    int out = 0;
     uint8_t* idxY = malloc(kLen * sizeof(uint8_t));
     uint8_t* idxX = malloc(kLen * sizeof(uint8_t));
     uint8_t* idxZ = malloc(kLen * sizeof(uint8_t));
@@ -661,19 +718,30 @@ void CnBn3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t
             // X dim
             for (uint16_t x = 0; x < (wdth - kwdt + 1); x++) {
                 // Need to do that because we'll be oring into it 
-                outTemp = 0;
+                memset(outTemp, 0, sizeof(outTemp));
+                out = 0;
                 for (uint16_t kl = 0; kl < kLen / pckWdt; kl++) {
                     // XNOR multiplication
-                    xnorTmp = ~(pAct[(y + idxY[kl]) * yCoeff + (x + idxX[kl]) * xCoeff + idxZ[kl]] ^ pKrn[index + kl]);
-                    // popcount
-                    xnorTmp = popcount(xnorTmp);
-                    // Accumulation
-                    outTemp += xnorTmp;
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        // XNOR multiplication
+                        xnorTmp[bitw] = ~(pAct[((y + idxY[kl]) * yCoeff + (x + idxX[kl]) * xCoeff + idxZ[kl]) * in_bit + bitw] ^ pKrn[(index + kl)]);
+                        //
+                        // popcount
+                        xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+                        // Accumulation
+                        outTemp[bitw] += xnorTmp[bitw];
+                    }
                 } // K-len
                 // Adjust the output value
-                outTemp = outTemp - (kLen - outTemp);
+                for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                    // Adjust the output value
+                    outTemp[bitw] = outTemp[bitw] - (kLen - outTemp[bitw]);
+                    // Get the int full precision value 
+                    out += (outTemp[bitw] << (in_bit - bitw - 1));
+                }
+                float out_temp = out / (float)(1 << (in_bit));// pow(2, in_bit);
                 // Binarize
-                *pOut++ = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                *pOut++ = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                 // Shift based on current kernel slice
                 /*outTemp = outTemp << (pckWdt - 1 - ks);
                 // First time writing to a given word, make sure to clear it
@@ -709,11 +777,12 @@ void CnBn3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t
  * @param[in] thresh - pointer to batch normalization threshold (if NULL, Bn is skipped)
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void CnBnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
+void CnBnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
+   pckDtype xnorTmp;
+   int32_t  outTemp;
+   int out = 0;
    uint8_t  *idxY = malloc((kLen/pckWdt)*sizeof(uint8_t));
    uint8_t  *idxX = malloc((kLen/pckWdt)*sizeof(uint8_t));
    uint8_t  *idxZ = malloc((kLen/pckWdt)*sizeof(uint8_t));
@@ -725,7 +794,7 @@ void CnBnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t*
    uint8_t  xyCount = 0;
    uint8_t  idxYY = 0;
    uint8_t  idxXX = 0;
-   pckDtype  signs = 0;
+   pckDtype*  signs = sign;
 
    // Outer loop - kernels
    for (uint16_t k = 0; k<knum/pckWdt; k++) {
@@ -743,51 +812,73 @@ void CnBnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t*
             for (uint16_t x = 0; x < (wdth-kwdt+2*pad+1); x++) {
                // Need to do that because we'll be oring into it 
                if (ks == 0) {
-                  pOut[y*(wdth-kwdt+2*pad+1)*knum/pckWdt + x*knum/pckWdt + k] = 0;
-               }
-               outTemp = 0;
-               xyCount = 0;
-               for (uint16_t kl = 0; kl < kLen/pckWdt; kl++) { 
-                  idxYY = y+idxY[kl];
-                  idxXX = x+idxX[kl];
-                  //if (!(idxYY < pad || idxXX < pad || idxYY >= hght-khgt+2*pad+1 || idxXX >= wdth-kwdt+2*pad+1)) {
-                  if (!(idxYY < pad || idxXX < pad || idxYY-pad >= hght || idxXX-pad >= wdth)) {
-                     xyCount++;
-                     // XNOR multiplication
-                     xnorTmp = ~( pAct[(idxYY-pad)*yCoeff + (idxXX-pad)*xCoeff + idxZ[kl]] ^ pKrn[(index + kl)]);
-                     // popcount
-                     xnorTmp = popcount(xnorTmp);
-                     // Accumulation
-                     outTemp += xnorTmp;
-                  }
-               } // K-len
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*pckWdt - outTemp);
+                   for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                       pOut[(y*(wdth-kwdt+2*pad+1)*knum/pckWdt + x*knum/pckWdt + k) * out_bit + bitw] = 0;
+                   }
+               }               
+               out = 0;               
+               for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                   xyCount = 0;
+                   outTemp = 0;
+                   for (uint16_t kl = 0; kl < kLen / pckWdt; kl++) {
+                       idxYY = y + idxY[kl];
+                       idxXX = x + idxX[kl];
+                       //if (!(idxYY < pad || idxXX < pad || idxYY >= hght-khgt+2*pad+1 || idxXX >= wdth-kwdt+2*pad+1)) {
+                       if (!(idxYY < pad || idxXX < pad || idxYY - pad >= hght || idxXX - pad >= wdth)) {
+                           xyCount++;
+                           // XNOR multiplication
+                           xnorTmp = ~(pAct[((idxYY - pad) * yCoeff + (idxXX - pad) * xCoeff + idxZ[kl]) * in_bit + bitw] ^ pKrn[(index + kl)]);
+                           // popcount
+                           xnorTmp = popcount(xnorTmp);
+                           // Accumulation
+                           outTemp += xnorTmp;
+                       }
+                   }// K-len
+                    // Adjust the output value
+                   outTemp = outTemp - (xyCount*pckWdt - outTemp);
+                   // Get the int full precision value 
+                   out += (outTemp << (in_bit - bitw - 1));
+               } 
                // Binarize
-               outTemp = (bnPrec) outTemp >= *thresh;
-               // Shift based on current kernel slice
-               outTemp = outTemp << (pckWdt-1-ks);
-               // First time writing to a given word, make sure to clear it
-               // Write out
-               pOut[y*(wdth-kwdt+2*pad+1)*knum/pckWdt + x*knum/pckWdt + k] |= outTemp;
+               int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+               int temp = 0;
+               for (int i = 0; i != in_bit; i++) {
+                   temp |= (1 << i);
+               }
+               temp = (temp & out) << (16 - in_bit);
+               out_temp += temp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out_temp >= *thresh;
+                   // Shift 
+                   pOut[(y*(wdth-kwdt+2*pad+1)*knum/pckWdt + x*knum/pckWdt + k) * out_bit + bitw] |= (temp << (pckWdt - ks - 1));
+                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+               }
             }
          }
          index += kLen/pckWdt;
          thresh++;
+         offset++;
       }
+      signs++;
    }
+   signs = sign;
    // Adjust signs
    // Outer loop - kernels
    for (uint16_t k = 0; k<knum/pckWdt; k++) {
       // Grab a batch of bn signs for kernels
-      signs = *sign++;
+      
       // Y dim
       for (uint16_t y = 0; y < ((hght-khgt+2*pad)+1); y++) {
          // X dim
          for (uint16_t x = 0; x < ((wdth-kwdt+2*pad)+1); x++) {
-            pOut[y*(((wdth-kwdt+2*pad))+1)*knum/pckWdt + x*knum/pckWdt + k] = ~(pOut[y*(((wdth-kwdt+2*pad))+1)*knum/pckWdt + x*knum/pckWdt + k] ^ signs);
+             for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                 // Shift 
+                 pOut[(y*(((wdth-kwdt+2*pad))+1)*knum/pckWdt + x*knum/pckWdt + k) * out_bit + bitw] = ~(pOut[(y*(((wdth-kwdt+2*pad))+1)*knum/pckWdt + x*knum/pckWdt + k) * out_bit + bitw] ^ (*signs));
+             }
          }
       }
+      signs++;
    }
    
    free(idxY);
@@ -796,11 +887,12 @@ void CnBnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t*
 
 }
 
-void CnBnPd3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
+void CnBnPd3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
 
     // Temporary variables
-    pckDtype xnorTmp = 0;
-    int32_t  outTemp = 0;
+    pckDtype xnorTmp[in_bit];
+    int32_t  outTemp[out_bit];
+    int out = 0;
     uint8_t* idxY = malloc((kLen / pckWdt) * sizeof(uint8_t));
     uint8_t* idxX = malloc((kLen / pckWdt) * sizeof(uint8_t));
     uint8_t* idxZ = malloc((kLen / pckWdt) * sizeof(uint8_t));
@@ -827,10 +919,13 @@ void CnBnPd3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8
             // X dim
             for (uint16_t x = 0; x < (wdth - kwdt + 2 * pad + 1); x++) {
                 // Need to do that because we'll be oring into it 
-                if (k == 0) {
-                    pOut[y * (wdth - kwdt + 2 * pad + 1) * knum / pckWdt + x * knum / pckWdt + k] = 0;
-                }
-                outTemp = 0;
+                /*if (k == 0) {
+                    for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                        pOut[(y * (wdth - kwdt + 2 * pad + 1) * knum / pckWdt + x * knum / pckWdt + k) * out_bit + bitw] = 0;
+                    }
+                }*/
+                memset(outTemp, 0, sizeof(outTemp));
+                out = 0;
                 xyCount = 0;
                 for (uint16_t kl = 0; kl < kLen / pckWdt; kl++) {
                     idxYY = y + idxY[kl];
@@ -839,17 +934,27 @@ void CnBnPd3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8
                     if (!(idxYY < pad || idxXX < pad || idxYY - pad >= hght || idxXX - pad >= wdth)) {
                         xyCount++;
                         // XNOR multiplication
-                        xnorTmp = ~(pAct[(idxYY - pad) * yCoeff + (idxXX - pad) * xCoeff + idxZ[kl]] ^ pKrn[(index + kl)]);
-                        // popcount
-                        xnorTmp = popcount(xnorTmp);
-                        // Accumulation
-                        outTemp += xnorTmp;
+                        for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                            // XNOR multiplication
+                            xnorTmp[bitw] = ~(pAct[((idxYY - pad) * yCoeff + (idxXX - pad) * xCoeff + idxZ[kl]) * in_bit + bitw] ^ pKrn[(index + kl)]);
+                            //
+                            // popcount
+                            xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+                            // Accumulation
+                            outTemp[bitw] += xnorTmp[bitw];
+                        }
                     }
                 } // K-len
                 // Adjust the output value
-                outTemp = outTemp - (xyCount * pckWdt - outTemp);
+                for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                    // Adjust the output value
+                    outTemp[bitw] = outTemp[bitw] - (xyCount * pckWdt - outTemp[bitw]);
+                    // Get the int full precision value 
+                    out += (outTemp[bitw] << (in_bit - bitw - 1));
+                }
                 // Binarize
-                pOut[y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k] = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                float out_temp = out / (float)(1 << (in_bit));// pow(2, in_bit);
+                pOut[y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k] = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                 // Shift based on current kernel slice
                 //outTemp = outTemp << (pckWdt - 1 - ks);
                 // First time writing to a given word, make sure to clear it
@@ -1032,11 +1137,12 @@ void CnBnPd3pxnNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uin
  * @param[in] thresh - pointer to batch normalization threshold (if NULL, Bn is skipped)
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void CnBnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
+void CnBnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
+    pckDtype xnorTmp;
+   int32_t  outTemp;
+   int out = 0;
    uint8_t  *idxY = malloc((kLen/pckWdt)*sizeof(uint8_t));
    uint8_t  *idxX = malloc((kLen/pckWdt)*sizeof(uint8_t));
    uint8_t  *idxZ = malloc((kLen/pckWdt)*sizeof(uint8_t));
@@ -1050,7 +1156,7 @@ void CnBnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_
    uint16_t  idxXX = 0;
    // For maxpooling
    int32_t  maxTemp = 0;
-   pckDtype  signs = 0;
+   pckDtype*  signs = sign;
 
    // Outer loop - kernels
    for (uint16_t k = 0; k<knum/pckWdt; k++) {
@@ -1069,57 +1175,78 @@ void CnBnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_
                maxTemp = -(khgt*kwdt*kdpt);
                // Need to do that because we'll be oring into it 
                if (ks == 0) {
-                  pOut[y*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + x*knum/pckWdt + k] = 0;
+                   for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                       pOut[(y*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + x*knum/pckWdt + k) * out_bit + bitw] = 0;
+                   }
                }
                for (uint16_t yy = 0; yy < pool; yy++) {
-                  for (uint16_t xx = 0; xx < pool; xx++) {
-                     outTemp = 0;
-                     xyCount = 0;
-                     for (uint16_t kl = 0; kl < kLen/pckWdt; kl++) { 
-                        idxYY = y*pool+yy+idxY[kl];
-                        idxXX = x*pool+xx+idxX[kl];
-                        if (!(idxYY < pad || idxXX < pad || idxYY-pad >= hght || idxXX-pad >= wdth)) {
-                           xyCount++;
-                           // XNOR multiplication
-                           xnorTmp = ~( pAct[(idxYY-pad)*yCoeff + (idxXX-pad)*xCoeff + idxZ[kl]] ^ pKrn[(index + kl)]);
-                           // popcount
-                           xnorTmp = popcount(xnorTmp);
-                           // Accumulation
-                           outTemp += xnorTmp;
-                        }
-                     } // K-len
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*pckWdt - outTemp);
+                  for (uint16_t xx = 0; xx < pool; xx++) {                      
+                      out = 0;
+                      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                          outTemp = 0;
+                          xyCount = 0;
+                          for (uint16_t kl = 0; kl < kLen / pckWdt; kl++) {
+                              idxYY = y * pool + yy + idxY[kl];
+                              idxXX = x * pool + xx + idxX[kl];
+                              if (!(idxYY < pad || idxXX < pad || idxYY - pad >= hght || idxXX - pad >= wdth)) {
+                                  xyCount++;
+                                  // XNOR multiplication
+                                  xnorTmp = ~(pAct[((idxYY - pad) * yCoeff + (idxXX - pad) * xCoeff + idxZ[kl]) * in_bit + bitw] ^ pKrn[(index + kl)]);
+                                  // popcount
+                                  xnorTmp = popcount(xnorTmp);
+                                  // Accumulation
+                                  outTemp += xnorTmp;
+                              }
+                          }
+                          outTemp = outTemp - (xyCount * pckWdt - outTemp);
+                         // Get the int full precision value 
+                         out += (outTemp << (in_bit - bitw - 1));
+                      } // K-len
                      // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                     if (out > maxTemp) { maxTemp = out;}
                   }
                }
                // Binarize
-               maxTemp = (bnPrec) maxTemp >= *thresh;
-               // Shift based on current kernel slice
-               maxTemp = maxTemp << (pckWdt-1-ks);
-               // First time writing to a given word, make sure to clear it
-               // Write out
-               pOut[y*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + x*knum/pckWdt + k] |= maxTemp;
+               // Binarize
+               int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+               int temp = 0;
+               for (int i = 0; i != in_bit; i++) {
+                   temp |= (1 << i);
+               }
+               temp = (temp & maxTemp) << (16 - in_bit);
+               out_temp += temp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out_temp >= *thresh;
+                   // Shift 
+                   pOut[(y*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + x*knum/pckWdt + k) * out_bit + bitw] |= (temp << (pckWdt - ks - 1));
+                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+               }
             }
          }
          index += kLen/pckWdt;
          thresh++;
+         offset++;
       }
+      signs++;
    }
-
+   signs = sign;
    // Adjust signs
    // Outer loop - kernels
    for (uint16_t k = 0; k<knum/pckWdt; k++) {
       // Grab a batch of bn signs for kernels
-      signs = *sign++;
+      
       // Y dim
       for (uint16_t y = 0; y < ((hght-khgt+2*pad+1)/pool); y++) {
          // X dim
          for (uint16_t x = 0; x < ((wdth-kwdt+2*pad+1)/pool); x++) {
-            pOut[y*(((wdth-kwdt+2*pad+1)/pool))*knum/pckWdt + x*knum/pckWdt + k] = ~(pOut[y*(((wdth-kwdt+2*pad+1)/pool))*knum/pckWdt + x*knum/pckWdt + k] ^ signs);
+             for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                 // Shift 
+                 pOut[(y*(((wdth-kwdt+2*pad+1)/pool))*knum/pckWdt + x*knum/pckWdt + k) * out_bit + bitw] = ~(pOut[(y*(((wdth-kwdt+2*pad+1)/pool))*knum/pckWdt + x*knum/pckWdt + k) * out_bit + bitw] ^ (*signs));
+             }
          }
       }
+      signs++;
    }
     free(idxY);
     free(idxX);
@@ -1127,11 +1254,12 @@ void CnBnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_
 }
 
 
-void CnBnPdPl3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
+void CnBnPdPl3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pInd, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
 
     // Temporary variables
-    pckDtype xnorTmp = 0;
-    int32_t  outTemp = 0;
+    pckDtype xnorTmp[in_bit];
+    int32_t  outTemp[in_bit];
+    int out = 0;
     uint8_t* idxY = malloc((kLen / pckWdt) * sizeof(uint8_t));
     uint8_t* idxX = malloc((kLen / pckWdt) * sizeof(uint8_t));
     uint8_t* idxZ = malloc((kLen / pckWdt) * sizeof(uint8_t));
@@ -1163,12 +1291,13 @@ void CnBnPdPl3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uin
                 for (uint16_t x = 0; x < ((wdth - kwdt + 2 * pad + 1) / pool); x++) {
                     maxTemp = -(khgt * kwdt * kdpt);
                     // Need to do that because we'll be oring into it 
-                    if (ks == 0) {
+                    /*if (ks == 0) {
                         pOut[y * ((wdth - kwdt + 2 * pad + 1) / pool) * knum / pckWdt + x * knum / pckWdt + k] = 0;
-                    }
+                    }*/
                     for (uint16_t yy = 0; yy < pool; yy++) {
                         for (uint16_t xx = 0; xx < pool; xx++) {
-                            outTemp = 0;
+                            memset(outTemp, 0, sizeof(outTemp));
+                            out = 0;
                             xyCount = 0;
                             for (uint16_t kl = 0; kl < kLen / pckWdt; kl++) {
                                 idxYY = y * pool + yy + idxY[kl];
@@ -1176,17 +1305,26 @@ void CnBnPdPl3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uin
                                 if (!(idxYY < pad || idxXX < pad || idxYY - pad >= hght || idxXX - pad >= wdth)) {
                                     xyCount++;
                                     // XNOR multiplication
-                                    xnorTmp = ~(pAct[(idxYY - pad) * yCoeff + (idxXX - pad) * xCoeff + idxZ[kl]] ^ pKrn[(index + kl)]);
-                                    // popcount
-                                    xnorTmp = popcount(xnorTmp);
-                                    // Accumulation
-                                    outTemp += xnorTmp;
+                                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                        // XNOR multiplication
+                                        xnorTmp[bitw] = ~(pAct[((idxYY - pad) * yCoeff + (idxXX - pad) * xCoeff + idxZ[kl]) * in_bit + bitw] ^ pKrn[(index + kl)]);
+                                        //
+                                        // popcount
+                                        xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+                                        // Accumulation
+                                        outTemp[bitw] += xnorTmp[bitw];
+                                    }
                                 }
                             } // K-len
                             // Adjust the output value
-                            outTemp = outTemp - (xyCount * pckWdt - outTemp);
+                            for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                // Adjust the output value
+                                outTemp[bitw] = outTemp[bitw] - (xyCount * pckWdt - outTemp[bitw]);
+                                // Get the int full precision value 
+                                out += (outTemp[bitw] << (in_bit - bitw - 1));
+                            }
                             // Maxpool
-                            if (outTemp > maxTemp) { maxTemp = outTemp; }
+                            if (out > maxTemp) { maxTemp = out; }
                         }
                     }
                     // Binarize
@@ -1195,7 +1333,8 @@ void CnBnPdPl3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uin
                     //maxTemp = maxTemp << (pckWdt - 1 - ks);
                     // First time writing to a given word, make sure to clear it
                     // Write out
-                    pOut[y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k] = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                    float out_temp = maxTemp / (float)(1 << (in_bit));// pow(2, in_bit);
+                    pOut[y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k] = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                 }
             }
             index += kLen / pckWdt;

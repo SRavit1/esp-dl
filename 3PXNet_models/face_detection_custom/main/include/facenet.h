@@ -1,6 +1,5 @@
 #pragma once
 
-#include "facenet.h"
 #include "dl_lib_matrix3d.h"
 #include "mtmn.h"
 #include "fd_forward.h"
@@ -16,41 +15,282 @@
 static const char *TAG = "app_process";
 
 #define _3PXNET_IMPL
-#define BINARIZE
+#define TERNARIZE_HIGH
+#define PNET
 
 #if defined(_3PXNET_IMPL)
 #if defined(BINARIZE)
+#ifdef PNET
 #include "pnet_binarize/source.h"
+#endif
+#ifdef RNET
+#include "rnet_binarize/source.h"
+#endif
+#ifdef ONET
+#include "onet_binarize/source.h"
+#endif
+#endif
+
+#if defined(TERNARIZE_LOW)
+#ifdef PNET
+#include "pnet_ternarize_low/source.h"
+#endif
+#ifdef RNET
+#include "rnet_ternarize_low/source.h"
+#endif
+#ifdef ONET
+#include "onet_ternarize_low/source.h"
+#endif
+#endif
+
+#if defined(TERNARIZE_MEDIUM)
+#ifdef PNET
+#include "pnet_ternarize_medium/source.h"
+#endif
+#ifdef RNET
+#include "rnet_ternarize_medium/source.h"
+#endif
+#ifdef ONET
+#include "onet_ternarize_medium/source.h"
+#endif
+#endif
+
+#if defined(TERNARIZE_HIGH)
+#ifdef PNET
+#include "pnet_ternarize_high/source.h"
+#endif
+#ifdef RNET
+#include "rnet_ternarize_high/source.h"
+#endif
+#ifdef ONET
+#include "onet_ternarize_high/source.h"
+#endif
+#endif
+
 void pnet_lite_f_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t *offset){
+#ifdef PNET
         uint8_t *curr_im = in->item;
-        CnBnBwn(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL);
-		CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL);
-		CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL);
-		CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, NULL, NULL);
-		int res = CnXnorNoBinWrap(l5act_bin, l5wght, C5Z, C5XY, C5XY, C5Z, C5KXY, C5KXY, C5KZ, output, C5PD, C5PL, 0, 0, 0, 0);
-        //int res = CnXnorNoBinWrap(l5act_bin, l5wght, C5Z, C5XY, C5XY, C5Z, C5KXY, C5KXY, C5KZ, output, C5PD, C5PL, bn5mean, bn5var, bn5gamma, bn5beta);
-        // l5act_bin=score, output=box
+        //this conversion is incorrect, but sufficient for inference time measurements
+        int8_t *curr_im_int8 = (int8_t*) curr_im;
+#ifdef BINARIZE
+        int64_t time_start = esp_timer_get_time();
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL,0);
+		int64_t time_conv1 = esp_timer_get_time();
+        CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, bn2thr, bn2sign, bn2offset, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        CnXnorNoBinWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, category->item, C4PD, C4PL, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_conv4 = esp_timer_get_time();
+        CnXnorNoBinWrap(l4act_bin, l5wght, C5Z, C5XY, C5XY, C5Z, C5KXY, C5KXY, C5KZ, offset->item, C5PD, C5PL, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+        int64_t time_conv5 = esp_timer_get_time();
+#endif
+#ifdef TERNARIZE_LOW
+        int64_t time_start = esp_timer_get_time();
+		CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, bn2thr, bn2sign, bn2offset, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        CnXnorNoBinWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, category->item, C4PD, C4PL, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_conv4 = esp_timer_get_time();
+        CnXnorNoBinWrap(l5act_bin, l5wght, C5Z, C5XY, C5XY, C5Z, C5KXY, C5KXY, C5KZ, offset->item, C5PD, C5PL, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+        int64_t time_conv5 = esp_timer_get_time();
+#endif
+#ifdef TERNARIZE_MEDIUM
+        int64_t time_start = esp_timer_get_time();
+		CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, bn2thr, bn2sign, bn2offset, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        CnXnorNoBinWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, category->item, C4PD, C4PL, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_conv4 = esp_timer_get_time();
+        CnXnorNoBinWrap(l5act_bin, l5wght, C5Z, C5XY, C5XY, C5Z, C5KXY, C5KXY, C5KZ, offset->item, C5PD, C5PL, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+        int64_t time_conv5 = esp_timer_get_time();
+#endif
+#ifdef TERNARIZE_HIGH
+        int64_t time_start = esp_timer_get_time();
+		CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, bn2thr, bn2sign, bn2offset, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        CnXnorNoBinWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, category->item, C4PD, C4PL, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_conv4 = esp_timer_get_time();
+        CnXnorNoBinWrap(l5act_bin, l5wght, C5Z, C5XY, C5XY, C5Z, C5KXY, C5KXY, C5KZ, offset->item, C5PD, C5PL, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+        int64_t time_conv5 = esp_timer_get_time();
+#endif
+        ESP_LOGI(TAG, "pnet forward pass finished in %lld mu_s.", (time_conv5 - time_start));
+        ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv1 - time_start));
+        ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv2 - time_conv1));
+        ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv3 - time_conv2));
+        ESP_LOGI(TAG, "conv_4 time: %lld mu_s.", (time_conv4 - time_conv3));
+        ESP_LOGI(TAG, "conv_5 time: %lld mu_s.", (time_conv5 - time_conv4));
+#endif
 }
 
 void rnet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t *offset) {
-		uint8_t *curr_im = in->item;
-        CnBnBwn(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL)
-		CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL);
-		CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL);
-		FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, NULL, NULL);
-		FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, NULL, NULL);
+#ifdef RNET
+        uint8_t *curr_im = in->item;
+        //this conversion is incorrect, but sufficient for inference time measurements
+        int8_t *curr_im_int8 = (int8_t*) curr_im;
+#ifdef BINARIZE
+        int64_t time_start = esp_timer_get_time();
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_fc1 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, category->item, bn3mean, bn3var, bn3gamma, bn3beta, 0, 0);
+		int64_t time_fc2 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l6wght, F6I, F6O, offset->item, bn3mean, bn3var, bn3gamma, bn3beta, 0, 0);
+        int64_t time_fc3 = esp_timer_get_time();
+#endif
+#ifdef TERNARIZE_LOW
+        int64_t time_start = esp_timer_get_time();
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        Fc3pxnWrap(l4act_bin, l4wght, l4ind, F4NPI, F4O, l5act_bin, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_fc1 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, category->item, bn3mean, bn3var, bn3gamma, bn3beta, 0, 0);
+		int64_t time_fc2 = esp_timer_get_time();
+        FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, offset->item, bn3mean, bn3var, bn3gamma, bn3beta, 0, 0);
+        int64_t time_fc3 = esp_timer_get_time();
+#endif
+#ifdef TERNARIZE_MEDIUM
+        int64_t time_start = esp_timer_get_time();
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        Fc3pxnWrap(l4act_bin, l4wght, l4ind, F4NPI, F4O, l5act_bin, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_fc1 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, category->item, bn3mean, bn3var, bn3gamma, bn3beta, 0, 0);
+		int64_t time_fc2 = esp_timer_get_time();
+        FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, offset->item, bn3mean, bn3var, bn3gamma, bn3beta, 0, 0);
+        int64_t time_fc3 = esp_timer_get_time();
+#endif
+#ifdef TERNARIZE_HIGH
+        int64_t time_start = esp_timer_get_time();
+		CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        Fc3pxnWrap(l4act_bin, l4wght, l4ind, F4NPI, F4O, l5act_bin, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_fc1 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, category->item, bn3mean, bn3var, bn3gamma, bn3beta, 0, 0);
+		int64_t time_fc2 = esp_timer_get_time();
+        FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, offset->item, bn3mean, bn3var, bn3gamma, bn3beta, 0, 0);
+        int64_t time_fc3 = esp_timer_get_time();
+#endif
+        ESP_LOGI(TAG, "rnet forward pass finished in %lld mu_s.", (time_fc3 - time_start));
+        ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv1 - time_start));
+        ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv2 - time_conv1));
+        ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv3 - time_conv2));
+        ESP_LOGI(TAG, "fc_1 time: %lld mu_s.", (time_fc1 - time_conv3));
+        ESP_LOGI(TAG, "fc_2 time: %lld mu_s.", (time_fc2 - time_fc1));
+        ESP_LOGI(TAG, "fc_3 time: %lld mu_s.", (time_fc3 - time_fc2));
+#endif
 }
 
 void onet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t *offset, dl_matrix3d_t *landmark) {
-		CnBnBwn(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL)
-		CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL);
-		CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL);
-		FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, NULL, NULL);
-		FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, NULL, NULL);
-		FcXnorWrap(l6act_bin, l6wght, F6I, F6O, l7act_bin, NULL, NULL);
-}
-
+#ifdef ONET
+        uint8_t *curr_im = in->item;
+        //this conversion is incorrect, but sufficient for inference time measurements
+		int8_t *curr_im_int8 = (int8_t*) curr_im;
+#ifdef BINARIZE
+        int64_t time_start = esp_timer_get_time();
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL, 0 ,0);
+		int64_t time_conv3 = esp_timer_get_time();
+        FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_fc1 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, category->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_fc2 = esp_timer_get_time();
+        FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, offset->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_fc3 = esp_timer_get_time();
+        FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, landmark->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+        int64_t time_fc4 = esp_timer_get_time();
 #endif
+#ifdef TERNARIZE_LOW
+        int64_t time_start = esp_timer_get_time();
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        Fc3pxnWrap(l4act_bin, l4wght, l4ind, F4NPI, F4O, l5act_bin, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_fc1 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, category->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_fc2 = esp_timer_get_time();
+        FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, offset->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_fc3 = esp_timer_get_time();
+        FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, landmark->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+        int64_t time_fc4 = esp_timer_get_time();
+#endif
+#ifdef TERNARIZE_MEDIUM
+        int64_t time_start = esp_timer_get_time();
+		CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        Fc3pxnWrap(l4act_bin, l4wght, l4ind, F4NPI, F4O, l5act_bin, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_fc1 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, category->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_fc2 = esp_timer_get_time();
+        FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, offset->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_fc3 = esp_timer_get_time();
+        FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, landmark->item, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+        int64_t time_fc4 = esp_timer_get_time();
+#endif
+#ifdef TERNARIZE_HIGH
+        int64_t time_start = esp_timer_get_time();
+		CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 0);
+		int64_t time_conv1 = esp_timer_get_time();
+        Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv2 = esp_timer_get_time();
+        Cn3pxnWrap(l3act_bin, l3wght, l3ind, C3NPI, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL, 0, 0);
+		int64_t time_conv3 = esp_timer_get_time();
+        Fc3pxnWrap(l4act_bin, l4wght, l4ind, F4NPI, F4O, l5act_bin, bn1thr, bn1sign, bn1offset, 0, 0);
+		int64_t time_fc1 = esp_timer_get_time();
+        FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, output, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_fc2 = esp_timer_get_time();
+        FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+		int64_t time_fc3 = esp_timer_get_time();
+        FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, output, bn4mean, bn4var, bn4gamma, bn4beta, 0, 0);
+        int64_t time_fc4 = esp_timer_get_time();
+#endif
+        ESP_LOGI(TAG, "onet forward pass finished in %lld mu_s.", (time_fc4 - time_start));
+        ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv1 - time_start));
+        ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv2 - time_conv1));
+        ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv3 - time_conv2));
+        ESP_LOGI(TAG, "fc_1 time: %lld mu_s.", (time_fc1 - time_conv3));
+        ESP_LOGI(TAG, "fc_2 time: %lld mu_s.", (time_fc2 - time_fc1));
+        ESP_LOGI(TAG, "fc_3 time: %lld mu_s.", (time_fc3 - time_fc2));
+        ESP_LOGI(TAG, "fc_4 time: %lld mu_s.", (time_fc4 - time_fc3));
+#endif
+}
 
 #elif defined (ESP_IMPL)
 #if defined(FULL_PREC)

@@ -45,62 +45,62 @@
  * @param[in] sign - pointer to the packed batch normalization signs
  * @return 0 - Success, 1 - Failure
  */
-uint8_t FcXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
+uint8_t FcXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
    // Batch Norm present (thresh != NULL)
    if (thresh) {
-      // Output or input not multiple of pack width - not supported atm
-      if (numIn % pckWdt != 0 || numOut % pckWdt != 0 ) {
-         return 1;
-      }
-      // NEON is currently implemented for 32-bit packs
+	  // Output or input not multiple of pack width - not supported atm
+	  if (numIn % pckWdt != 0 || numOut % pckWdt != 0 ) {
+		 return 1;
+	  }
+	  // NEON is currently implemented for 32-bit packs
 #ifdef NEON
 #ifdef PCK32
-      // Check for quad SIMD support
-      else if (numIn % (4*pckWdt) == 0) {
-         FcBnXnorNeonQ(pAct, pWgt, numIn, numOut, pOut, thresh, sign);
-         return 0;
-      }
-      // Check for dual SIMD support
-      else if (numIn % (2*pckWdt) == 0) {
-         FcBnXnorNeon(pAct, pWgt, numIn, numOut, pOut, thresh, sign);
-         return 0;
-      }
+	  // Check for quad SIMD support
+	  else if (numIn % (4*pckWdt) == 0) {
+		 FcBnXnorNeonQ(pAct, pWgt, numIn, numOut, pOut, thresh, sign);
+		 return 0;
+	  }
+	  // Check for dual SIMD support
+	  else if (numIn % (2*pckWdt) == 0) {
+		 FcBnXnorNeon(pAct, pWgt, numIn, numOut, pOut, thresh, sign);
+		 return 0;
+	  }
 #endif
 #endif
-      // Roll back to default implementation
-      else {
-         FcBnXnorPtr(pAct, pWgt, numIn, numOut, pOut, thresh, sign);
-         //FcBnXnorArr(pAct, pWgt, numIn, numOut, pOut, thresh, sign);
-         return 0;
-      }
+	  // Roll back to default implementation
+	  else {
+		 FcBnXnorPtr(pAct, pWgt, numIn, numOut, pOut, thresh, sign, offset, in_bit, out_bit);
+		 //FcBnXnorArr(pAct, pWgt, numIn, numOut, pOut, thresh, sign);
+		 return 0;
+	  }
    }
    // No Batch Norm (bnDtype == NULL)
    else {
-      // Output or input not multiple of pack width - not supported atm
-      if (numIn % pckWdt != 0 || numOut % pckWdt != 0 ) {
-         return 1;
-      }
-      // NEON is currently implemented for 32-bit packs
+	  // Output or input not multiple of pack width - not supported atm
+	  if (numIn % pckWdt != 0 || numOut % pckWdt != 0 ) {
+		 return 1;
+	  }
+	  // NEON is currently implemented for 32-bit packs
 #ifdef NEON
 #ifdef PCK32
-      // Check for quad SIMD support
-      else if (numIn % (4*pckWdt) == 0) {
-         FcXnorNeonQ(pAct, pWgt, numIn, numOut, pOut);
-         return 0;
-      }
-      // Check for dual SIMD support
-      else if (numIn % (2*pckWdt) == 0) {
-         FcXnorNeon(pAct, pWgt, numIn, numOut, pOut);
-         return 0;
-      }
+	  // Check for quad SIMD support
+	  else if (numIn % (4*pckWdt) == 0) {
+		 FcXnorNeonQ(pAct, pWgt, numIn, numOut, pOut);
+		 return 0;
+	  }
+	  // Check for dual SIMD support
+	  else if (numIn % (2*pckWdt) == 0) {
+		 FcXnorNeon(pAct, pWgt, numIn, numOut, pOut);
+		 return 0;
+	  }
 #endif
 #endif
-      // Roll back to default implementation
-      else {
-         FcXnorPtr(pAct, pWgt, numIn, numOut, pOut);
-         return 0;
-      }
+	  // Roll back to default implementation
+	  else {
+		 FcXnorPtr(pAct, pWgt, numIn, numOut, pOut,in_bit,out_bit);
+		 return 0;
+	  }
    }
 }
 
@@ -119,61 +119,61 @@ uint8_t FcXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const
  * @param[in] beta - batch norm beta (per output)
  * @return 0 - Success, 1 - Failure
  */
-uint8_t FcXnorNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta) {
+uint8_t FcXnorNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit) {
 
    // Batch Norm present (mean != NULL)
    if (mean) {
-      // Input not multiple of pack width - not supported atm
-      if (numIn % pckWdt != 0 ) {
-         return 1;
-      }
-      // NEON is currently implemented for 32-bit packs
+	  // Input not multiple of pack width - not supported atm
+	  if (numIn % pckWdt != 0 ) {
+		 return 1;
+	  }
+	  // NEON is currently implemented for 32-bit packs
 #ifdef NEON
 #ifdef PCK32
-      // Check for quad SIMD support
-      else if (numIn % (4*pckWdt) == 0) {
-         FcBnXnorNeonQNoBin(pAct, pWgt, numIn, numOut, pOut, mean, var, gamma, beta);
-         return 0;
-      }
-      // Check for dual SIMD support
-      else if (numIn % (2*pckWdt) == 0) {
-         FcBnXnorNeonNoBin(pAct, pWgt, numIn, numOut, pOut, mean, var, gamma, beta);
-         return 0;
-      }
+	  // Check for quad SIMD support
+	  else if (numIn % (4*pckWdt) == 0) {
+		 FcBnXnorNeonQNoBin(pAct, pWgt, numIn, numOut, pOut, mean, var, gamma, beta);
+		 return 0;
+	  }
+	  // Check for dual SIMD support
+	  else if (numIn % (2*pckWdt) == 0) {
+		 FcBnXnorNeonNoBin(pAct, pWgt, numIn, numOut, pOut, mean, var, gamma, beta);
+		 return 0;
+	  }
 #endif
 #endif
-      // Roll back to default implementation
-      else {
-         FcBnXnorPtrNoBin(pAct, pWgt, numIn, numOut, pOut, mean, var, gamma, beta);
-         return 0;
-      }
+	  // Roll back to default implementation
+	  else {
+		 FcBnXnorPtrNoBin(pAct, pWgt, numIn, numOut, pOut, mean, var, gamma, beta,in_bit,out_bit);
+		 return 0;
+	  }
    }
    // No Batch Norm (bnDtype == NULL)
    else {
-      // Output or input not multiple of pack width - not supported atm
-      if (numIn % pckWdt != 0) {
-         return 1;
-      }
-      // NEON is currently implemented for 32-bit packs
+	  // Output or input not multiple of pack width - not supported atm
+	  if (numIn % pckWdt != 0) {
+		 return 1;
+	  }
+	  // NEON is currently implemented for 32-bit packs
 #ifdef NEON
 #ifdef PCK32
-      // Check for quad SIMD support
-      else if (numIn % (4*pckWdt) == 0) {
-         FcXnorNeonQNoBin(pAct, pWgt, numIn, numOut, pOut);
-         return 0;
-      }
-      // Check for dual SIMD support
-      else if (numIn % (2*pckWdt) == 0) {
-         FcXnorNeonNoBin(pAct, pWgt, numIn, numOut, pOut);
-         return 0;
-      }
+	  // Check for quad SIMD support
+	  else if (numIn % (4*pckWdt) == 0) {
+		 FcXnorNeonQNoBin(pAct, pWgt, numIn, numOut, pOut);
+		 return 0;
+	  }
+	  // Check for dual SIMD support
+	  else if (numIn % (2*pckWdt) == 0) {
+		 FcXnorNeonNoBin(pAct, pWgt, numIn, numOut, pOut);
+		 return 0;
+	  }
 #endif
 #endif
-      // Roll back to default implementation
-      else {
-         FcXnorArrNoBin(pAct, pWgt, numIn, numOut, pOut);
-         return 0;
-      }
+	  // Roll back to default implementation
+	  else {
+		 FcXnorArrNoBin(pAct, pWgt, numIn, numOut, pOut,in_bit,out_bit);
+		 return 0;
+	  }
    }
 }
 
@@ -188,54 +188,65 @@ uint8_t FcXnorNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, 
  * @param[in] numOut - length of the output vector
  * @param[out] pOut - pointer to the packed output vector
  */
-void FcXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut) {
+void FcXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
 
-   // Input counter
-   uint16_t inCnt = numIn;
-   // Output counter
-   uint16_t outCnt = numOut;
-   // Activations
-   pckDtype *pIn = pAct;
-   // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // Packing/shifting  index
-   uint8_t packIdx = pckWdt-1;
-   // For holding batches of output values 
-   pckDtype pckTemp = 0;
-   
-   while (outCnt) {
-      outTemp = 0;
-      inCnt = numIn;
-      pIn = pAct;
-      while (inCnt) {
-         // XNOR multiplication
-         xnorTmp = ~ (*pIn++ ^ *pWgt++);
-         // popcount//Accummulate
-         outTemp += popcount(xnorTmp);
-         // Decrement input counter
-         inCnt -= pckWdt;
-      }
-      // Adjust the output value
-      outTemp = outTemp -(numIn - outTemp);
-      // Binarize output using sign
-      outTemp = outTemp >= 0;
-      // Shift 
-      outTemp = outTemp << packIdx;
-      // Pack
-      pckTemp |= outTemp;
-      // Full output block - write out
-      if (packIdx == 0) {
-         *pOut++ = pckTemp;
-         pckTemp = 0;
-         packIdx = pckWdt-1;
-      }
-      else {
-         packIdx--;
-      }
-      outCnt--;
-   }
-	
+    // Input counter
+    uint16_t inCnt = numIn;
+    // Output counter
+    uint16_t outCnt = numOut;
+    // Activations
+    pckDtype *pIn = pAct;
+    // temporary output value (before binarization)
+    uint32_t xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+	int32_t pckTemp[out_bit];
+	int32_t out = 0;
+    // Packing/shifting  index
+    uint8_t pckIdx = pckWdt-1;  
+	memset(pckTemp, 0, sizeof(int32_t) * out_bit);
+    while (outCnt) {
+		out = 0;
+		memset(outTemp, 0, sizeof(outTemp));
+	    inCnt = numIn;
+	    pIn = pAct;
+	    while (inCnt) {
+		    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+			    // XNOR multiplication
+			    xnorTemp[bitw] = ~ (*pIn++ ^ *pWgt);
+			    // popcount//Accummulate
+			    outTemp[bitw] += popcount(xnorTemp[bitw]);
+		    }	
+		    pWgt++;
+		   // Decrement input counter
+		   inCnt -= pckWdt;
+	    }
+	  
+		for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+			// Adjust the output value
+			outTemp[bitw] = outTemp[bitw] -(numIn - outTemp[bitw]);
+			// Get the int full precision value 
+			out += (outTemp[bitw] << (in_bit - bitw - 1));
+		}
+		// Quantization
+		for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+			int temp = out > 0;
+			// Shift 
+			pckTemp[bitw] |= (temp << pckIdx);
+			out = (temp == 0 ? out + (1 << (out_bit - bitw - 1)) : out - (1 << (out_bit - bitw - 1)));
+		}
+		// Full output block - write out
+		if (pckIdx == 0) {
+			for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+				*pOut++ = pckTemp[bitw];
+			}
+			pckIdx = pckWdt-1;
+			memset(pckTemp, 0, sizeof(int32_t) * out_bit);
+		}
+		else {
+			pckIdx--;
+		}
+		outCnt--;
+	}
 }
 
 /**
@@ -248,38 +259,47 @@ void FcXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uin
  * @param[in] numOut - length of the output vector
  * @param[out] pOut - pointer to the packed output vector
  */
-void FcXnorArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut) {
+void FcXnorArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
 
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
+   uint32_t xnorTemp[in_bit];
+   int32_t  outTemp[in_bit];
    // For holding batches of output values 
-   pckDtype pckTemp = 0;
+   pckDtype pckTemp[out_bit];
    // Weight index counter
    uint32_t wgtCnt = 0;
-
+   int16_t out = 0;
    for (uint16_t outCnt = 0; outCnt < numOut/pckWdt; outCnt++) {
-      pckTemp = 0;
-      for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
-         outTemp = 0;
-         for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
-            // XNOR multiplication
-            xnorTmp = ~ ( pAct[inCnt] ^ pWgt[wgtCnt]);
-            // popcount/Accumulate
-            outTemp += popcount(xnorTmp);
-            wgtCnt++;
-         }
-         // Adjust the output value
-         outTemp = outTemp -(numIn-outTemp);
-         // Binarize
-         outTemp = outTemp >= 0;
-         // Shift
-         outTemp = outTemp << (pckWdt-1-packIdx);
-         // Pack
-         pckTemp |= outTemp;
-      }
-      // Write output block
-      pOut[outCnt] = pckTemp;
+	  memset(pckTemp, 0, sizeof(pckTemp));
+	  for (uint8_t pckIdx = 0; pckIdx < pckWdt; pckIdx++) {
+		  out = 0;
+		 memset(outTemp, 0, sizeof(outTemp));
+		 for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
+			 for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+				 // XNOR multiplication
+				 xnorTemp[bitw] = ~(pAct[inCnt*in_bit+bitw] ^ pWgt[wgtCnt]);
+				 // popcount//Accummulate
+				 outTemp[bitw] += popcount(xnorTemp[bitw]);
+			 }
+			wgtCnt++;
+		 }
+		 for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+			 // Adjust the output value
+			 outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+			 // Get the int full precision value 
+			 out += (outTemp[bitw] << (in_bit - bitw - 1));
+		 }
+		 // Quantization
+		 for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+			 int temp = out > 0;
+			 // Shift 
+			 pckTemp[bitw] |= (temp << (pckWdt - pckIdx - 1));
+			 out = (temp == 0 ? out + (1 << (out_bit - bitw - 1)) : out - (1 << (out_bit - bitw - 1)));
+		 }
+	  }
+	  for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+		  *pOut++ = pckTemp[bitw];
+	  }
    }
 }
 
@@ -309,44 +329,44 @@ void FcXnorNeon(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const ui
    pckDtype pckTemp = 0;
 
    for (uint16_t outCnt = 0; outCnt < numOut/pckWdt; outCnt++) {
-      pckTemp = 0;
-      for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
-         vecOut = 0;
-         pIn = pAct;
-         for (uint16_t inCnt = 0; inCnt < numIn/64; inCnt++) {
-            // Load values
-            vecAct = vld1_s32(pIn);
-            vecWgt = vld1_s32(pWgt);
-            // XNOR
-            vecAct = veor_s32(vecAct, vecWgt);
-            vecAct = vmvn_s32(vecAct);
-            // popcount
-            // popcount only works on 8-bit vectors, so needs some casting
-            // Not a problem here because those are binary vectors not values
-            vecAct = vreinterpret_s32_s8(vcnt_s8(vreinterpret_s8_s32(vecAct)));
-            // Now we need to do addition
-            // 8x8b reduce to 4x16b
-            vecAct = vreinterpret_s32_s16(vpaddl_s8(vreinterpret_s8_s32(vecAct)));
-            // 4x16b to 2x32b
-            vecAct = vpaddl_s16(vreinterpret_s16_s32(vecAct));
-            // 2x32b to a single value
-            vecOut += vpaddl_s32(vecAct);
-            pIn += 2;
-            pWgt += 2;
-         }
-         // Extract the output
-         outTemp = (int32_t) vget_lane_s64(vecOut, 0);
-         // Adjust the value
-         outTemp = outTemp - (numIn- outTemp);
-         // Binarize
-         outTemp = outTemp >= 0;
-         // Shift
-         outTemp = outTemp << (pckWdt-1-packIdx);
-         // Pack
-         pckTemp |= outTemp;
-      }
-      // Write output block
-      pOut[outCnt] = pckTemp;
+	  pckTemp = 0;
+	  for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
+		 vecOut = 0;
+		 pIn = pAct;
+		 for (uint16_t inCnt = 0; inCnt < numIn/64; inCnt++) {
+			// Load values
+			vecAct = vld1_s32(pIn);
+			vecWgt = vld1_s32(pWgt);
+			// XNOR
+			vecAct = veor_s32(vecAct, vecWgt);
+			vecAct = vmvn_s32(vecAct);
+			// popcount
+			// popcount only works on 8-bit vectors, so needs some casting
+			// Not a problem here because those are binary vectors not values
+			vecAct = vreinterpret_s32_s8(vcnt_s8(vreinterpret_s8_s32(vecAct)));
+			// Now we need to do addition
+			// 8x8b reduce to 4x16b
+			vecAct = vreinterpret_s32_s16(vpaddl_s8(vreinterpret_s8_s32(vecAct)));
+			// 4x16b to 2x32b
+			vecAct = vpaddl_s16(vreinterpret_s16_s32(vecAct));
+			// 2x32b to a single value
+			vecOut += vpaddl_s32(vecAct);
+			pIn += 2;
+			pWgt += 2;
+		 }
+		 // Extract the output
+		 outTemp = (int32_t) vget_lane_s64(vecOut, 0);
+		 // Adjust the value
+		 outTemp = outTemp - (numIn- outTemp);
+		 // Binarize
+		 outTemp = outTemp >= 0;
+		 // Shift
+		 outTemp = outTemp << (pckWdt-1-packIdx);
+		 // Pack
+		 pckTemp |= outTemp;
+	  }
+	  // Write output block
+	  pOut[outCnt] = pckTemp;
    }
 }
 
@@ -374,45 +394,45 @@ void FcXnorNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const u
    pckDtype pckTemp = 0;
 
    for (uint16_t outCnt = 0; outCnt < numOut/pckWdt; outCnt++) {
-      pckTemp = 0;
-      for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
-         vecOut[0] = 0;
-         vecOut[1] = 0;
-         pIn = pAct;
-         for (uint16_t inCnt = 0; inCnt < numIn/128; inCnt++) {
-            // Load values
-            vecAct = vld1q_s32(pIn);
-            vecWgt = vld1q_s32(pWgt);
-            // XNOR
-            vecAct = veorq_s32(vecAct, vecWgt);
-            vecAct = vmvnq_s32(vecAct);
-            // popcount
-            // popcount only works on 8-bit vectors, so needs some casting
-            // Not a problem here because those are binary vectors not values
-            vecAct = vreinterpretq_s32_s8(vcntq_s8(vreinterpretq_s8_s32(vecAct)));
-            // Now we need to do addition
-            // 16x8b reduce to 8x16b
-            vecAct = vreinterpretq_s32_s16(vpaddlq_s8(vreinterpretq_s8_s32(vecAct)));
-            // 8x16b to 4x32b
-            vecAct = vpaddlq_s16(vreinterpretq_s16_s32(vecAct));
-            // 4x32b to a two values
-            vecOut += vpaddlq_s32(vecAct);
-            pIn += 4;
-            pWgt += 4;
-         }
-         // Extract the output
-         outTemp = (int32_t) vgetq_lane_s64(vecOut, 0) + vgetq_lane_s64(vecOut, 1);
-         // Adjust the value
-         outTemp = outTemp - (numIn- outTemp);
-         // Binarize
-         outTemp = outTemp >= 0;
-         // Shift
-         outTemp = outTemp << (pckWdt-1-packIdx);
-         // Pack
-         pckTemp |= outTemp;
-      }
-      // Write output block
-      pOut[outCnt] = pckTemp;
+	  pckTemp = 0;
+	  for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
+		 vecOut[0] = 0;
+		 vecOut[1] = 0;
+		 pIn = pAct;
+		 for (uint16_t inCnt = 0; inCnt < numIn/128; inCnt++) {
+			// Load values
+			vecAct = vld1q_s32(pIn);
+			vecWgt = vld1q_s32(pWgt);
+			// XNOR
+			vecAct = veorq_s32(vecAct, vecWgt);
+			vecAct = vmvnq_s32(vecAct);
+			// popcount
+			// popcount only works on 8-bit vectors, so needs some casting
+			// Not a problem here because those are binary vectors not values
+			vecAct = vreinterpretq_s32_s8(vcntq_s8(vreinterpretq_s8_s32(vecAct)));
+			// Now we need to do addition
+			// 16x8b reduce to 8x16b
+			vecAct = vreinterpretq_s32_s16(vpaddlq_s8(vreinterpretq_s8_s32(vecAct)));
+			// 8x16b to 4x32b
+			vecAct = vpaddlq_s16(vreinterpretq_s16_s32(vecAct));
+			// 4x32b to a two values
+			vecOut += vpaddlq_s32(vecAct);
+			pIn += 4;
+			pWgt += 4;
+		 }
+		 // Extract the output
+		 outTemp = (int32_t) vgetq_lane_s64(vecOut, 0) + vgetq_lane_s64(vecOut, 1);
+		 // Adjust the value
+		 outTemp = outTemp - (numIn- outTemp);
+		 // Binarize
+		 outTemp = outTemp >= 0;
+		 // Shift
+		 outTemp = outTemp << (pckWdt-1-packIdx);
+		 // Pack
+		 pckTemp |= outTemp;
+	  }
+	  // Write output block
+	  pOut[outCnt] = pckTemp;
    }
 }
 #endif /* NEON */
@@ -429,54 +449,75 @@ void FcXnorNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const u
  * @param[in] thresh - pointer to batch normalization threshold (if NULL, Bn is skipped)
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void FcBnXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
+void FcBnXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
-   // Input counter
-   uint16_t inCnt = numIn;
-   // Output counter
-   uint16_t outCnt = numOut;
-   // Activations
-   pckDtype *pIn = pAct;
-   // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // Packing/shifting  index
-   uint8_t packIdx = pckWdt-1;
-   // For holding batches of output values 
-   pckDtype pckTemp = 0;
-   
-   while (outCnt) {
-      outTemp = 0;
-      inCnt = numIn;
-      pIn = pAct;
-      while (inCnt/pckWdt) {
-         // XNOR multiplication
-         xnorTmp = ~ (*pIn++ ^ *pWgt++);
-         // popcount/Accumulate
-         outTemp += popcount(xnorTmp);
-         // Decrement input counter
-         inCnt -= pckWdt;
-      }
-      // Adjust the output value
-      outTemp = outTemp -(numIn-outTemp);
-      // Batch normalize/ binarize
-      outTemp = (bnPrec) outTemp >= *thresh++;
-      // Shift 
-      outTemp = outTemp << packIdx;
-      // Pack
-      pckTemp |= outTemp;
-      // Full output block - write out/ correct Bn sign
-      if (packIdx == 0) {
-         pckTemp = ~(pckTemp ^ *sign++);
-         *pOut++ = pckTemp;
-         pckTemp = 0;
-         packIdx = pckWdt-1;
-      }
-      else {
-         packIdx--;
-      }
-      outCnt--;
-   }
+	// Input counter
+	uint16_t inCnt = numIn;
+	// Output counter
+	uint16_t outCnt = numOut;
+	// Activations
+	pckDtype* pIn = pAct;
+	// temporary output value (before binarization)
+	uint32_t xnorTemp[in_bit];
+	int32_t  outTemp[in_bit];
+	int32_t pckTemp[out_bit];
+	int out = 0;
+	// Packing/shifting  index
+	uint8_t pckIdx = pckWdt - 1;
+	memset(pckTemp, 0, sizeof(int32_t) * out_bit);
+	while (outCnt) {
+		memset(outTemp, 0, in_bit*sizeof(int32_t));
+		out = 0;
+		inCnt = numIn;
+		pIn = pAct;
+		while (inCnt) {
+			for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+				// XNOR multiplication
+				xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+				// popcount//Accummulate
+				outTemp[bitw] += popcount(xnorTemp[bitw]);
+			}
+			pWgt++;
+			// Decrement input counter
+			inCnt -= pckWdt;
+		}
+
+		for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+			// Adjust the output value
+			outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+			// Get the int full precision value 
+			out += (outTemp[bitw] << (in_bit - bitw - 1));
+		}
+		// Quantization
+		int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+		int temp = 0;
+		for (int i = 0; i != in_bit; i++) {
+			temp |= (1 << i);
+		}
+		temp = temp & out;
+		out_temp += temp;
+		for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+			int temp = out_temp > *thresh;
+			// Shift 
+			pckTemp[bitw] |= (temp << (pckIdx));
+			out_temp = (temp ^ (1 & ((*sign) >> (pckIdx))) ? out_temp + ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+		}
+		thresh++;
+		offset++;
+		// Full output block - write out
+		if (pckIdx == 0) {
+			for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+				*pOut++ = ~(pckTemp[bitw]^(*sign));
+			}
+			sign++;
+			pckIdx = pckWdt - 1;
+			memset(pckTemp, 0, sizeof(int32_t)*out_bit);
+		}
+		else {
+			pckIdx--;
+		}
+		outCnt--;
+	}
 }
 
 /**
@@ -491,40 +532,57 @@ void FcBnXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const u
  * @param[in] thresh - pointer to batch normalization threshold (if NULL, Bn is skipped)
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void FcBnXnorArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
-
-   // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // For holding batches of output values 
-   pckDtype pckTemp = 0;
-   // Weight index counter
-   uint32_t wgtCnt = 0;
-
-   for (uint16_t outCnt = 0; outCnt < numOut/pckWdt; outCnt++) {
-      pckTemp = 0;
-      for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
-         outTemp = 0;
-         for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
-            // XNOR multiplication
-            xnorTmp = ~ ( pAct[inCnt] ^ pWgt[wgtCnt]);
-            // popcount/Accumulate
-            outTemp += popcount(xnorTmp);
-            wgtCnt++;
-         }
-         // Adjust the output value
-         outTemp = outTemp -(numIn-outTemp);
-         // Batch normalize/ binarize
-         outTemp = (bnPrec) outTemp >= thresh[outCnt*pckWdt+packIdx];
-         // Shift
-         outTemp = outTemp << (pckWdt-1-packIdx);
-         // Pack
-         pckTemp |= outTemp;
-      }
-      // Write output block
-      pckTemp = ~(pckTemp ^ sign[outCnt]);
-      pOut[outCnt] = pckTemp;
-   }
+void FcBnXnorArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
+	// temporary output value (before binarization)
+	uint32_t xnorTemp[in_bit];
+	int32_t  outTemp[in_bit];
+	// For holding batches of output values 
+	pckDtype pckTemp[out_bit];
+	// Weight index counter
+	uint32_t wgtCnt = 0;
+	int out = 0;
+	for (uint16_t outCnt = 0; outCnt < numOut / pckWdt; outCnt++) {
+		memset(pckTemp, 0, sizeof(pckTemp));
+		for (uint8_t pckIdx = 0; pckIdx < pckWdt; pckIdx++) {
+			memset(outTemp, 0, sizeof(outTemp));
+			out = 0;
+			for (uint16_t inCnt = 0; inCnt < numIn / pckWdt; inCnt++) {
+				for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+					// XNOR multiplication
+					xnorTemp[bitw] = ~(pAct[inCnt * in_bit + bitw] ^ pWgt[wgtCnt]);
+					// popcount//Accummulate
+					outTemp[bitw] += popcount(xnorTemp[bitw]);
+				}
+				wgtCnt++;
+			}
+			for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+				// Adjust the output value
+				outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+				// Get the int full precision value 
+				out += (outTemp[bitw] << (in_bit - bitw - 1));
+			}
+			// Quantization
+			int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+			int temp = 0;
+			for (int i = 0; i != in_bit; i++) {
+				temp |= (1 << i);
+			}
+			temp = temp & out;
+			out_temp += temp;
+			for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+				int temp = out_temp > *thresh;
+				// Shift 
+				pckTemp[bitw] |= (temp << (pckIdx));
+				out_temp = (temp ^ (1 & ((*sign) >> (pckIdx))) ? out_temp + ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+			}
+			thresh++;
+			offset++;
+		}
+		// Write output block
+		for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+			*pOut++ = ~(pckTemp[bitw]^sign[outCnt]);
+		}
+	}
 }
 
 #ifdef NEON
@@ -555,45 +613,45 @@ void FcBnXnorNeon(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const 
    pckDtype pckTemp = 0;
 
    for (uint16_t outCnt = 0; outCnt < numOut/pckWdt; outCnt++) {
-      pckTemp = 0;
-      for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
-         vecOut = 0;
-         pIn = pAct;
-         for (uint16_t inCnt = 0; inCnt < numIn/64; inCnt++) {
-            // Load values
-            vecAct = vld1_s32(pIn);
-            vecWgt = vld1_s32(pWgt);
-            // XNOR
-            vecAct = veor_s32(vecAct, vecWgt);
-            vecAct = vmvn_s32(vecAct);
-            // popcount
-            // popcount only works on 8-bit vectors, so needs some casting
-            // Not a problem here because those are binary vectors not values
-            vecAct = vreinterpret_s32_s8(vcnt_s8(vreinterpret_s8_s32(vecAct)));
-            // Now we need to do addition
-            // 8x8b reduce to 4x16b
-            vecAct = vreinterpret_s32_s16(vpaddl_s8(vreinterpret_s8_s32(vecAct)));
-            // 4x16b to 2x32b
-            vecAct = vpaddl_s16(vreinterpret_s16_s32(vecAct));
-            // 2x32b to a single value
-            vecOut += vpaddl_s32(vecAct);
-            pIn += 2;
-            pWgt += 2;
-         }
-         // Extract the output
-         outTemp = (int32_t) vget_lane_s64(vecOut, 0);
-         // Adjust the value
-         outTemp = outTemp - (numIn- outTemp);
-         // Batch normalize/ binarize
-         outTemp = (bnPrec) outTemp >= *thresh++;
-         // Shift
-         outTemp = outTemp << (pckWdt-1-packIdx);
-         // Pack
-         pckTemp |= outTemp;
-      }
-      // Write output block
-      pckTemp = ~(pckTemp ^ *sign++);
-      pOut[outCnt] = pckTemp;
+	  pckTemp = 0;
+	  for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
+		 vecOut = 0;
+		 pIn = pAct;
+		 for (uint16_t inCnt = 0; inCnt < numIn/64; inCnt++) {
+			// Load values
+			vecAct = vld1_s32(pIn);
+			vecWgt = vld1_s32(pWgt);
+			// XNOR
+			vecAct = veor_s32(vecAct, vecWgt);
+			vecAct = vmvn_s32(vecAct);
+			// popcount
+			// popcount only works on 8-bit vectors, so needs some casting
+			// Not a problem here because those are binary vectors not values
+			vecAct = vreinterpret_s32_s8(vcnt_s8(vreinterpret_s8_s32(vecAct)));
+			// Now we need to do addition
+			// 8x8b reduce to 4x16b
+			vecAct = vreinterpret_s32_s16(vpaddl_s8(vreinterpret_s8_s32(vecAct)));
+			// 4x16b to 2x32b
+			vecAct = vpaddl_s16(vreinterpret_s16_s32(vecAct));
+			// 2x32b to a single value
+			vecOut += vpaddl_s32(vecAct);
+			pIn += 2;
+			pWgt += 2;
+		 }
+		 // Extract the output
+		 outTemp = (int32_t) vget_lane_s64(vecOut, 0);
+		 // Adjust the value
+		 outTemp = outTemp - (numIn- outTemp);
+		 // Batch normalize/ binarize
+		 outTemp = (bnPrec) outTemp >= *thresh++;
+		 // Shift
+		 outTemp = outTemp << (pckWdt-1-packIdx);
+		 // Pack
+		 pckTemp |= outTemp;
+	  }
+	  // Write output block
+	  pckTemp = ~(pckTemp ^ *sign++);
+	  pOut[outCnt] = pckTemp;
    }
 }
 
@@ -623,46 +681,46 @@ void FcBnXnorNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const
    pckDtype pckTemp = 0;
 
    for (uint16_t outCnt = 0; outCnt < numOut/pckWdt; outCnt++) {
-      pckTemp = 0;
-      for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
-         vecOut[0] = 0;
-         vecOut[1] = 0;
-         pIn = pAct;
-         for (uint16_t inCnt = 0; inCnt < numIn/128; inCnt++) {
-            // Load values
-            vecAct = vld1q_s32(pIn);
-            vecWgt = vld1q_s32(pWgt);
-            // XNOR
-            vecAct = veorq_s32(vecAct, vecWgt);
-            vecAct = vmvnq_s32(vecAct);
-            // popcount
-            // popcount only works on 8-bit vectors, so needs some casting
-            // Not a problem here because those are binary vectors not values
-            vecAct = vreinterpretq_s32_s8(vcntq_s8(vreinterpretq_s8_s32(vecAct)));
-            // Now we need to do addition
-            // 16x8b reduce to 8x16b
-            vecAct = vreinterpretq_s32_s16(vpaddlq_s8(vreinterpretq_s8_s32(vecAct)));
-            // 8x16b to 4x32b
-            vecAct = vpaddlq_s16(vreinterpretq_s16_s32(vecAct));
-            // 4x32b to a two values
-            vecOut += vpaddlq_s32(vecAct);
-            pIn += 4;
-            pWgt += 4;
-         }
-         // Extract the output
-         outTemp = (int32_t) vgetq_lane_s64(vecOut, 0) + vgetq_lane_s64(vecOut, 1);
-         // Adjust the value
-         outTemp = outTemp - (numIn- outTemp);
-         // Batch normalize/ binarize
-         outTemp = (bnPrec) outTemp >= *thresh++;
-         // Shift
-         outTemp = outTemp << (pckWdt-1-packIdx);
-         // Pack
-         pckTemp |= outTemp;
-      }
-      // Write output block
-      pckTemp = ~(pckTemp ^ *sign++);
-      pOut[outCnt] = pckTemp;
+	  pckTemp = 0;
+	  for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
+		 vecOut[0] = 0;
+		 vecOut[1] = 0;
+		 pIn = pAct;
+		 for (uint16_t inCnt = 0; inCnt < numIn/128; inCnt++) {
+			// Load values
+			vecAct = vld1q_s32(pIn);
+			vecWgt = vld1q_s32(pWgt);
+			// XNOR
+			vecAct = veorq_s32(vecAct, vecWgt);
+			vecAct = vmvnq_s32(vecAct);
+			// popcount
+			// popcount only works on 8-bit vectors, so needs some casting
+			// Not a problem here because those are binary vectors not values
+			vecAct = vreinterpretq_s32_s8(vcntq_s8(vreinterpretq_s8_s32(vecAct)));
+			// Now we need to do addition
+			// 16x8b reduce to 8x16b
+			vecAct = vreinterpretq_s32_s16(vpaddlq_s8(vreinterpretq_s8_s32(vecAct)));
+			// 8x16b to 4x32b
+			vecAct = vpaddlq_s16(vreinterpretq_s16_s32(vecAct));
+			// 4x32b to a two values
+			vecOut += vpaddlq_s32(vecAct);
+			pIn += 4;
+			pWgt += 4;
+		 }
+		 // Extract the output
+		 outTemp = (int32_t) vgetq_lane_s64(vecOut, 0) + vgetq_lane_s64(vecOut, 1);
+		 // Adjust the value
+		 outTemp = outTemp - (numIn- outTemp);
+		 // Batch normalize/ binarize
+		 outTemp = (bnPrec) outTemp >= *thresh++;
+		 // Shift
+		 outTemp = outTemp << (pckWdt-1-packIdx);
+		 // Pack
+		 pckTemp |= outTemp;
+	  }
+	  // Write output block
+	  pckTemp = ~(pckTemp ^ *sign++);
+	  pOut[outCnt] = pckTemp;
    }
 }
 
@@ -678,7 +736,7 @@ void FcBnXnorNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const
  * @param[in] numOut - length of the output vector
  * @param[out] pOut - pointer to the packed output vector
  */
-void FcXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut) {
+void FcXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
 
    // Input counter
    uint16_t inCnt = numIn;
@@ -687,26 +745,35 @@ void FcXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, cons
    // Activations
    pckDtype *pIn = pAct;
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int16_t  outTemp = 0;
-   
+   uint32_t xnorTemp[in_bit];
+   int32_t  outTemp[in_bit];
+   int16_t out = 0;
+   memset(xnorTemp, 0, sizeof(xnorTemp));
    while (outCnt) {
-      outTemp = 0;
-      inCnt = numIn;
-      pIn = pAct;
-      while (inCnt) {
-         // XNOR multiplication
-         xnorTmp = ~ (*pIn++ ^ *pWgt++);
-         // popcount/Accummulate
-         outTemp += popcount(xnorTmp);
-         // Decrement input counter
-         inCnt -= pckWdt;
-      }
-      // Adjust the output value
-      outTemp = outTemp -(numIn-outTemp);
-      // Write output block
-      *pOut++ = (float) outTemp;
-      outCnt--;
+	   memset(outTemp, 0, sizeof(outTemp));
+	   out = 0;
+	  inCnt = numIn;
+	  pIn = pAct;
+	  while (inCnt) {
+		  for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+			  // XNOR multiplication
+			  xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+			  // popcount//Accummulate
+			  outTemp[bitw] += popcount(xnorTemp[bitw]);
+		  }
+		  pWgt++;
+		  // Decrement input counter
+		  inCnt -= pckWdt;
+	  }
+	  for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+		  // Adjust the output value
+		  outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+		  // Get the int full precision value 
+		  out += (outTemp[bitw] << (in_bit - bitw - 1));
+	  }
+	  // Write output block
+	  *pOut++ = (float) out;
+	  outCnt--;
    }
 }
 
@@ -720,28 +787,33 @@ void FcXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, cons
  * @param[in] numOut - length of the output vector
  * @param[out] pOut - pointer to the packed output vector
  */
-void FcXnorArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut) {
-
-   // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // Weight index counter
-   uint32_t wgtCnt = 0;
-
-   for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
-      outTemp = 0;
-      for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
-         // XNOR multiplication
-         xnorTmp = ~ ( pAct[inCnt] ^ pWgt[wgtCnt]);
-         // popcount/Accummulation
-         outTemp += popcount(xnorTmp);
-         wgtCnt++;
-      }
-      // Adjust the output value
-      outTemp = outTemp -(numIn-outTemp);
-      // Write output block
-      pOut[outCnt] = (float) outTemp;
-   }
+void FcXnorArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
+	// temporary output value (before binarization)
+	uint32_t xnorTemp[in_bit];
+	int32_t  outTemp[in_bit];
+	// Weight index counter
+	uint32_t wgtCnt = 0;
+	int16_t out = 0;
+	for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
+		memset(outTemp, 0, sizeof(outTemp));
+		out = 0;
+		for (uint16_t inCnt = 0; inCnt < numIn / pckWdt; inCnt++) {
+			for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+				// XNOR multiplication
+				xnorTemp[bitw] = ~(pAct[inCnt * in_bit + bitw] ^ pWgt[wgtCnt]);
+				// popcount//Accummulate
+				outTemp[bitw] += popcount(xnorTemp[bitw]);
+			}
+			wgtCnt++;
+		}
+		for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+			// Adjust the output value
+			outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+			// Get the int full precision value 
+			out += (outTemp[bitw] << (in_bit - bitw - 1));			
+		}
+		*pOut++ = (float)out;
+	}
 }
 
 #ifdef NEON
@@ -769,35 +841,35 @@ void FcXnorNeonNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, con
    int32_t   outTemp;
 
    for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
-      vecOut = 0;
-      pIn = pAct;
-      for (uint16_t inCnt = 0; inCnt < numIn/64; inCnt++) {
-         // Load values
-         vecAct = vld1_s32(pIn);
-         vecWgt = vld1_s32(pWgt);
-         // XNOR
-         vecAct = veor_s32(vecAct, vecWgt);
-         vecAct = vmvn_s32(vecAct);
-         // popcount
-         // popcount only works on 8-bit vectors, so needs some casting
-         // Not a problem here because those are binary vectors not values
-         vecAct = vreinterpret_s32_s8(vcnt_s8(vreinterpret_s8_s32(vecAct)));
-         // Now we need to do addition
-         // 8x8b reduce to 4x16b
-         vecAct = vreinterpret_s32_s16(vpaddl_s8(vreinterpret_s8_s32(vecAct)));
-         // 4x16b to 2x32b
-         vecAct = vpaddl_s16(vreinterpret_s16_s32(vecAct));
-         // 2x32b to a single value
-         vecOut += vpaddl_s32(vecAct);
-         pIn += 2;
-         pWgt += 2;
-      }
-      // Extract the output
-      outTemp = (int32_t) vget_lane_s64(vecOut, 0);
-      // Adjust the value
-      outTemp = outTemp - (numIn- outTemp);
-      // Write output block
-      pOut[outCnt] = (float) outTemp;
+	  vecOut = 0;
+	  pIn = pAct;
+	  for (uint16_t inCnt = 0; inCnt < numIn/64; inCnt++) {
+		 // Load values
+		 vecAct = vld1_s32(pIn);
+		 vecWgt = vld1_s32(pWgt);
+		 // XNOR
+		 vecAct = veor_s32(vecAct, vecWgt);
+		 vecAct = vmvn_s32(vecAct);
+		 // popcount
+		 // popcount only works on 8-bit vectors, so needs some casting
+		 // Not a problem here because those are binary vectors not values
+		 vecAct = vreinterpret_s32_s8(vcnt_s8(vreinterpret_s8_s32(vecAct)));
+		 // Now we need to do addition
+		 // 8x8b reduce to 4x16b
+		 vecAct = vreinterpret_s32_s16(vpaddl_s8(vreinterpret_s8_s32(vecAct)));
+		 // 4x16b to 2x32b
+		 vecAct = vpaddl_s16(vreinterpret_s16_s32(vecAct));
+		 // 2x32b to a single value
+		 vecOut += vpaddl_s32(vecAct);
+		 pIn += 2;
+		 pWgt += 2;
+	  }
+	  // Extract the output
+	  outTemp = (int32_t) vget_lane_s64(vecOut, 0);
+	  // Adjust the value
+	  outTemp = outTemp - (numIn- outTemp);
+	  // Write output block
+	  pOut[outCnt] = (float) outTemp;
    }
 }
 
@@ -823,36 +895,36 @@ void FcXnorNeonQNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, co
    int32_t   outTemp;
 
    for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
-      vecOut[0] = 0;
-      vecOut[1] = 0;
-      pIn = pAct;
-      for (uint16_t inCnt = 0; inCnt < numIn/128; inCnt++) {
-         // Load values
-         vecAct = vld1q_s32(pIn);
-         vecWgt = vld1q_s32(pWgt);
-         // XNOR
-         vecAct = veorq_s32(vecAct, vecWgt);
-         vecAct = vmvnq_s32(vecAct);
-         // popcount
-         // popcount only works on 8-bit vectors, so needs some casting
-         // Not a problem here because those are binary vectors not values
-         vecAct = vreinterpretq_s32_s8(vcntq_s8(vreinterpretq_s8_s32(vecAct)));
-         // Now we need to do addition
-         // 16x8b reduce to 8x16b
-         vecAct = vreinterpretq_s32_s16(vpaddlq_s8(vreinterpretq_s8_s32(vecAct)));
-         // 8x16b to 4x32b
-         vecAct = vpaddlq_s16(vreinterpretq_s16_s32(vecAct));
-         // 4x32b to a two values
-         vecOut += vpaddlq_s32(vecAct);
-         pIn += 4;
-         pWgt += 4;
-      }
-      // Extract the output
-      outTemp = (int32_t) vgetq_lane_s64(vecOut, 0) + vgetq_lane_s64(vecOut, 1);
-      // Adjust the value
-      outTemp = outTemp - (numIn- outTemp);
-      // Write output block
-      pOut[outCnt] = (float) outTemp;
+	  vecOut[0] = 0;
+	  vecOut[1] = 0;
+	  pIn = pAct;
+	  for (uint16_t inCnt = 0; inCnt < numIn/128; inCnt++) {
+		 // Load values
+		 vecAct = vld1q_s32(pIn);
+		 vecWgt = vld1q_s32(pWgt);
+		 // XNOR
+		 vecAct = veorq_s32(vecAct, vecWgt);
+		 vecAct = vmvnq_s32(vecAct);
+		 // popcount
+		 // popcount only works on 8-bit vectors, so needs some casting
+		 // Not a problem here because those are binary vectors not values
+		 vecAct = vreinterpretq_s32_s8(vcntq_s8(vreinterpretq_s8_s32(vecAct)));
+		 // Now we need to do addition
+		 // 16x8b reduce to 8x16b
+		 vecAct = vreinterpretq_s32_s16(vpaddlq_s8(vreinterpretq_s8_s32(vecAct)));
+		 // 8x16b to 4x32b
+		 vecAct = vpaddlq_s16(vreinterpretq_s16_s32(vecAct));
+		 // 4x32b to a two values
+		 vecOut += vpaddlq_s32(vecAct);
+		 pIn += 4;
+		 pWgt += 4;
+	  }
+	  // Extract the output
+	  outTemp = (int32_t) vgetq_lane_s64(vecOut, 0) + vgetq_lane_s64(vecOut, 1);
+	  // Adjust the value
+	  outTemp = outTemp - (numIn- outTemp);
+	  // Write output block
+	  pOut[outCnt] = (float) outTemp;
    }
 }
 #endif /* NEON */
@@ -871,42 +943,44 @@ void FcXnorNeonQNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, co
  * @param[in] gamma - batch norm gamma (per output)
  * @param[in] beta - batch norm beta (per output)
  */
-void FcBnXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta) {
-
-   // Input counter
-   uint16_t inCnt = numIn;
-   // Output counter
-   uint16_t outCnt = numOut;
-   // Activations
-   pckDtype *pIn = pAct;
-   // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int16_t  outTemp = 0;
-   
-   while (outCnt) {
-      outTemp = 0;
-      inCnt = numIn;
-      pIn = pAct;
-      while (inCnt) {
-         // XNOR multiplication
-         //printf("%X %X\n", *pIn, *pWgt);
-         xnorTmp = ~ (*pIn++ ^ *pWgt++);
-         // popcount/Accumulate
-         outTemp += popcount(xnorTmp);
-         // Decrement input counter
-         inCnt -= pckWdt;
-      }
-      // Adjust the output value
-      outTemp = outTemp -(numIn-outTemp);
-      // Batch normalize
-      // Write output block
-      //*pOut++ = (float) *gamma++ * (((bnPrec) outTemp - *mean++)/(sqrt((bnPrec)*var++ + epsilon))) + *beta++;
-      //printf("%d, ", outTemp);
-      //goto end;
-      *pOut++ = *gamma++ * (((bnPrec) outTemp - *mean++)/(*var++)) + *beta++;
-      outCnt--;
-   }
-end:;
+void FcBnXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit) {
+	// Input counter
+	uint16_t inCnt = numIn;
+	// Output counter
+	uint16_t outCnt = numOut;
+	// Activations
+	pckDtype* pIn = pAct;
+	int16_t out = 0;
+	// temporary output value (before binarization)
+	uint32_t xnorTemp[in_bit];
+	int32_t  outTemp[in_bit];
+	memset(xnorTemp, 0, sizeof(xnorTemp));
+	while (outCnt) {
+		memset(outTemp, 0, sizeof(outTemp));
+		out = 0;
+		inCnt = numIn;
+		pIn = pAct;
+		while (inCnt) {
+			for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+				// XNOR multiplication
+				xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+				// popcount//Accummulate
+				outTemp[bitw] += popcount(xnorTemp[bitw]);
+			}
+			pWgt++;
+			// Decrement input counter
+			inCnt -= pckWdt;
+		}
+		for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+			// Adjust the output value
+			outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+			// Get the int full precision value 
+			out += (outTemp[bitw] << (in_bit - bitw - 1));
+		}
+		// Write output block
+		*pOut++ = *gamma++ * (((bnPrec)out - *mean++) / (*var++)) + *beta++;
+		outCnt--;
+	}
 }
 
 /**
@@ -923,29 +997,33 @@ end:;
  * @param[in] gamma - batch norm gamma (per output)
  * @param[in] beta - batch norm beta (per output)
  */
-void FcBnXnorArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta) {
-
-   // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // Weight index counter
-   uint32_t wgtCnt = 0;
-
-   for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
-      outTemp = 0;
-      for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
-         // XNOR multiplication
-         xnorTmp = ~ ( pAct[inCnt] ^ pWgt[wgtCnt]);
-         // popcount/Accummulate
-         outTemp += popcount(xnorTmp);
-         wgtCnt++;
-      }
-      // Adjust the output value
-      outTemp = outTemp -(numIn-outTemp);
-      // Batch normalize
-      // Write output block
-      pOut[outCnt] = (float) *gamma++ * (((bnPrec) outTemp - *mean++)/(*var++ )) + *beta++;
-   }
+void FcBnXnorArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit) {
+	// temporary output value (before binarization)
+	uint32_t xnorTemp[in_bit];
+	int32_t  outTemp[in_bit];
+	// Weight index counter
+	uint32_t wgtCnt = 0;
+	int16_t out = 0;
+	for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
+		memset(outTemp, 0, sizeof(outTemp));
+		out = 0;
+		for (uint16_t inCnt = 0; inCnt < numIn / pckWdt; inCnt++) {
+			for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+				// XNOR multiplication
+				xnorTemp[bitw] = ~(pAct[inCnt * in_bit + bitw] ^ pWgt[wgtCnt]);
+				// popcount//Accummulate
+				outTemp[bitw] += popcount(xnorTemp[bitw]);
+			}
+			wgtCnt++;
+		}
+		for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+			// Adjust the output value
+			outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+			// Get the int full precision value 
+			out += (outTemp[bitw] << (in_bit - bitw - 1));			
+		}
+		*pOut++ = (float)*gamma++ * (((bnPrec)out - *mean++) / (*var++)) + *beta++;
+	}
 }
 
 #ifdef NEON
@@ -977,36 +1055,36 @@ void FcBnXnorNeonNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, c
    int32_t   outTemp;
 
    for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
-      vecOut = 0;
-      pIn = pAct;
-      for (uint16_t inCnt = 0; inCnt < numIn/(64); inCnt++) {
-         // Load values
-         vecAct = vld1_s32(pIn);
-         vecWgt = vld1_s32(pWgt);
-         // XNOR
-         vecAct = veor_s32(vecAct, vecWgt);
-         vecAct = vmvn_s32(vecAct);
-         // popcount
-         // popcount only works on 8-bit vectors, so needs some casting
-         // Not a problem here because those are binary vectors not values
-         vecAct = vreinterpret_s32_s8(vcnt_s8(vreinterpret_s8_s32(vecAct)));
-         // Now we need to do addition
-         // 8x8b reduce to 4x16b
-         vecAct = vreinterpret_s32_s16(vpaddl_s8(vreinterpret_s8_s32(vecAct)));
-         // 4x16b to 2x32b
-         vecAct = vpaddl_s16(vreinterpret_s16_s32(vecAct));
-         // 2x32b to a single value
-         vecOut += vpaddl_s32(vecAct);
-         pIn += 2;
-         pWgt += 2;
-      }
-      // Extract the output
-      outTemp = (int32_t) vget_lane_s64(vecOut, 0);
-      // Adjust the value
-      outTemp = outTemp - (numIn- outTemp);
-      // Batch normalize
-      // Write output block
-      pOut[outCnt] = (float) *gamma++ * (((bnPrec) outTemp - *mean++)/(*var++ )) + *beta++;
+	  vecOut = 0;
+	  pIn = pAct;
+	  for (uint16_t inCnt = 0; inCnt < numIn/(64); inCnt++) {
+		 // Load values
+		 vecAct = vld1_s32(pIn);
+		 vecWgt = vld1_s32(pWgt);
+		 // XNOR
+		 vecAct = veor_s32(vecAct, vecWgt);
+		 vecAct = vmvn_s32(vecAct);
+		 // popcount
+		 // popcount only works on 8-bit vectors, so needs some casting
+		 // Not a problem here because those are binary vectors not values
+		 vecAct = vreinterpret_s32_s8(vcnt_s8(vreinterpret_s8_s32(vecAct)));
+		 // Now we need to do addition
+		 // 8x8b reduce to 4x16b
+		 vecAct = vreinterpret_s32_s16(vpaddl_s8(vreinterpret_s8_s32(vecAct)));
+		 // 4x16b to 2x32b
+		 vecAct = vpaddl_s16(vreinterpret_s16_s32(vecAct));
+		 // 2x32b to a single value
+		 vecOut += vpaddl_s32(vecAct);
+		 pIn += 2;
+		 pWgt += 2;
+	  }
+	  // Extract the output
+	  outTemp = (int32_t) vget_lane_s64(vecOut, 0);
+	  // Adjust the value
+	  outTemp = outTemp - (numIn- outTemp);
+	  // Batch normalize
+	  // Write output block
+	  pOut[outCnt] = (float) *gamma++ * (((bnPrec) outTemp - *mean++)/(*var++ )) + *beta++;
    }
 }
 
@@ -1036,37 +1114,37 @@ void FcBnXnorNeonQNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, 
    int32_t   outTemp;
 
    for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
-      vecOut[0] = 0;
-      vecOut[1] = 0;
-      pIn = pAct;
-      for (uint16_t inCnt = 0; inCnt < numIn/(128); inCnt++) {
-         // Load values
-         vecAct = vld1q_s32(pIn);
-         vecWgt = vld1q_s32(pWgt);
-         // XNOR
-         vecAct = veorq_s32(vecAct, vecWgt);
-         vecAct = vmvnq_s32(vecAct);
-         // popcount
-         // popcount only works on 8-bit vectors, so needs some casting
-         // Not a problem here because those are binary vectors not values
-         vecAct = vreinterpretq_s32_s8(vcntq_s8(vreinterpretq_s8_s32(vecAct)));
-         // Now we need to do addition
-         // 16x8b reduce to 8x16b
-         vecAct = vreinterpretq_s32_s16(vpaddlq_s8(vreinterpretq_s8_s32(vecAct)));
-         // 8x16b to 4x32b
-         vecAct = vpaddlq_s16(vreinterpretq_s16_s32(vecAct));
-         // 4x32b to a two values
-         vecOut += vpaddlq_s32(vecAct);
-         pIn += 4;
-         pWgt += 4;
-      }
-      // Extract the output
-      outTemp = (int32_t) vgetq_lane_s64(vecOut, 0) + vgetq_lane_s64(vecOut, 1);
-      // Adjust the value
-      outTemp = outTemp - (numIn- outTemp);
-      // Batch normalize
-      // Write output block
-      pOut[outCnt] = (float) *gamma++ * (((bnPrec) outTemp - *mean++)/(*var++)) + *beta++;
+	  vecOut[0] = 0;
+	  vecOut[1] = 0;
+	  pIn = pAct;
+	  for (uint16_t inCnt = 0; inCnt < numIn/(128); inCnt++) {
+		 // Load values
+		 vecAct = vld1q_s32(pIn);
+		 vecWgt = vld1q_s32(pWgt);
+		 // XNOR
+		 vecAct = veorq_s32(vecAct, vecWgt);
+		 vecAct = vmvnq_s32(vecAct);
+		 // popcount
+		 // popcount only works on 8-bit vectors, so needs some casting
+		 // Not a problem here because those are binary vectors not values
+		 vecAct = vreinterpretq_s32_s8(vcntq_s8(vreinterpretq_s8_s32(vecAct)));
+		 // Now we need to do addition
+		 // 16x8b reduce to 8x16b
+		 vecAct = vreinterpretq_s32_s16(vpaddlq_s8(vreinterpretq_s8_s32(vecAct)));
+		 // 8x16b to 4x32b
+		 vecAct = vpaddlq_s16(vreinterpretq_s16_s32(vecAct));
+		 // 4x32b to a two values
+		 vecOut += vpaddlq_s32(vecAct);
+		 pIn += 4;
+		 pWgt += 4;
+	  }
+	  // Extract the output
+	  outTemp = (int32_t) vgetq_lane_s64(vecOut, 0) + vgetq_lane_s64(vecOut, 1);
+	  // Adjust the value
+	  outTemp = outTemp - (numIn- outTemp);
+	  // Batch normalize
+	  // Write output block
+	  pOut[outCnt] = (float) *gamma++ * (((bnPrec) outTemp - *mean++)/(*var++)) + *beta++;
    }
 }
 

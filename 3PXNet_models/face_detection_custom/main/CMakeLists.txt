@@ -3,7 +3,7 @@ set(COMPONENT_SRCS
 app_main.cpp
 app_facenet.c
 app_camera.cpp
-facenet_full_prec.c
+facenet_full_prec.cpp
 #    facenet_full_prec_qu.c
 fd_forward.c
 )
@@ -29,3 +29,7 @@ target_link_libraries(${COMPONENT_TARGET} "-L ${CMAKE_CURRENT_SOURCE_DIR}/../../
 target_link_libraries(${COMPONENT_TARGET}
 dl
 )
+target_link_libraries(${COMPONENT_TARGET} "-L ${CMAKE_CURRENT_SOURCE_DIR}/../3pxnet-inference-library")
+target_link_libraries(${COMPONENT_TARGET}
+    3pxnet-inference-library
+    )

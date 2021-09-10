@@ -48,22 +48,22 @@ extern "C" {
 /**
  * @brief  Dense binarized Fully Connected (FC) layer with output binarization - general wrapper.
  */
-uint8_t FcXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+uint8_t FcXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Fully Connected (FC) layer without output binarization - general wrapper.
  */
-uint8_t FcXnorNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta);
+uint8_t FcXnorNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Fully Connected (FC) layer with output binarization - pointer version
  */
-void FcXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut);
+void FcXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Fully Connected (FC) layer with output binarization - array version
  */
-void FcXnorArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut);
+void FcXnorArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 
 #ifdef NEON
 
@@ -81,12 +81,12 @@ void FcXnorNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const u
 /**
  * @brief  Dense binarized Fully Connected (FC) layer with output binarization - pointer version, batch norm
  */
-void FcXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut);
+void FcXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Fully Connected (FC) layer with output binarization - array version, batch norm
  */
-void FcXnorArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut);
+void FcXnorArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 #ifdef NEON
 
 /**
@@ -103,12 +103,12 @@ void FcXnorNeonQNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, co
 /**
  * @brief  Dense binarized Fully Connected (FC) layer without output binarization - pointer version 
  */
-void FcBnXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void FcBnXnorPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Fully Connected (FC) layer without output binarization - array version 
  */
-void FcBnXnorArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void FcBnXnorArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
 
 #ifdef NEON
 
@@ -126,12 +126,12 @@ void FcBnXnorNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const
 /**
  * @brief  Dense binarized Fully Connected (FC) layer without output binarization - pointer version, batch norm
  */
-void FcBnXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta);
+void FcBnXnorPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Fully Connected (FC) layer without output binarization - array version, batch norm
  */
-void FcBnXnorArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta);
+void FcBnXnorArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 #ifdef NEON
 

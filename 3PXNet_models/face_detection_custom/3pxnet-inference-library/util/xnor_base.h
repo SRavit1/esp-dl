@@ -47,32 +47,32 @@ extern "C" {
 /**
  * @brief Pack a vector of inputs into binary containers (words) - pointer version
  */
-void packBinThrsPtr(actDtype * restrict pSrc, pckDtype * restrict pDst, uint32_t numIn, int32_t threshold);
+void packBinThrsPtr(actDtype * /*restrict*/ pSrc, pckDtype * /*restrict*/ pDst, uint32_t numIn, int32_t threshold);
 
 /**
  * @brief Pack a vector of inputs into binary containers (words) - pointer version/ floating input
  */
-void packBinThrsPtrFlt(float * restrict pSrc, pckDtype * restrict pDst, uint32_t numIn, float threshold);
+void packBinThrsPtrFlt(float * /*restrict*/ pSrc, pckDtype * /*restrict*/ pDst, uint32_t numIn, float threshold);
 
 /**
  * @brief Pack a vector of inputs into binary containers (words) - array version
  */
-void packBinThrsArr(uint8_t * restrict pSrc, pckDtype * restrict pDst, uint32_t numIn, int32_t threshold);
+void packBinThrsArr(uint8_t * /*restrict*/ pSrc, pckDtype * /*restrict*/ pDst, uint32_t numIn, int32_t threshold);
 
 /**
  * @brief Permute inputs through matrix multiplication - pointer version
  */
-void permInMatPtr(actDtype * restrict pSrc, uint8_t * restrict pPerm, uint16_t numIn, actDtype * restrict pDst);
+void permInMatPtr(actDtype * /*restrict*/ pSrc, uint8_t * /*restrict*/ pPerm, uint16_t numIn, actDtype * /*restrict*/ pDst);
 
 /**
  * @brief Permute inputs through permutation indices - pointer version
  */
-void permInIndPtr(float * restrict pSrc, uint16_t * restrict pPermInd, uint16_t numIn, float * restrict pDst);
+void permInIndPtr(float * /*restrict*/ pSrc, uint16_t * /*restrict*/ pPermInd, uint16_t numIn, float * /*restrict*/ pDst);
 
 /**
  * @brief Permute inputs through permutation indices - array version
  */
-void permInIndArr(actDtype * restrict pSrc, uint16_t * restrict pPermInd, uint16_t numIn, actDtype * restrict pDst);
+void permInIndArr(actDtype * /*restrict*/ pSrc, uint16_t * /*restrict*/ pPermInd, uint16_t numIn, actDtype * /*restrict*/ pDst);
 
 
 

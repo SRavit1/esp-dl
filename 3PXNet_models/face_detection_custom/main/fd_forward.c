@@ -307,6 +307,7 @@ box_array_t *pnet_forward_fast(dl_matrix3du_t *image, fptp_t min_face, int pyram
         resized_image->stride = resized_image->w * resized_image->c;
 
         int64_t model_start = esp_timer_get_time();
+        out = pnet_lite_f(resized_image);
 #if CONFIG_MTMN_LITE_FLOAT
         out = pnet_lite_f(resized_image);
 #endif
@@ -511,6 +512,8 @@ box_array_t *rnet_forward(dl_matrix3du_t *image, box_array_t *net_boxes, net_con
         image_resize_linear(resized_image->item, sliced_image->item, config->w, config->h, image->c, w, h);
 
         int64_t model_start = esp_timer_get_time();
+        
+        rnet_lite_f_with_score_verify(resized_image, config->threshold.score);
 #if CONFIG_MTMN_LITE_FLOAT
         mtmn_net_t *out = rnet_lite_f_with_score_verify(resized_image, config->threshold.score);
 #endif
@@ -733,8 +736,8 @@ box_array_t *face_detect(dl_matrix3du_t *image_matrix, mtmn_config_t *config)
                                    config->pyramid_times,
                                    &pnet_config);
 
-    if (NULL == pnet_boxes)
-        return NULL;
+    /*if (NULL == pnet_boxes)
+        return NULL;*/
 
     net_config_t rnet_config = {0};
     rnet_config.w = 24;
@@ -745,11 +748,15 @@ box_array_t *face_detect(dl_matrix3du_t *image_matrix, mtmn_config_t *config)
                                            pnet_boxes,
                                            &rnet_config);
 
+    /*
     dl_lib_free(pnet_boxes->box);
     dl_lib_free(pnet_boxes);
+    */
 
+    /*
     if (NULL == rnet_boxes)
         return NULL;
+    */
 
     net_config_t onet_config = {0};
     onet_config.w = 48;

@@ -48,64 +48,65 @@ extern "C" {
  * @brief 3PXNet binarized convolutional (Cn) layer with output binarization - general wrapper.
  */
 
-uint8_t Cn3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pIn, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype * __restrict thresh, pckDtype * sign);
+uint8_t Cn3pxnWrap(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, const uint16_t pad, const uint16_t pool, pckDtype * /*__restrict*/ thresh, pckDtype * sign, pckDtype* /*__restrict*/ offset, uint8_t in_bit, uint8_t out_bit);
+
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer without output binarization - general wrapper.
  */
-uint8_t Cn3pxnNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+uint8_t Cn3pxnNoBinWrap(pckDtype* /*__restrict*/ pAct, pckDtype* /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* /*__restrict*/ pOut, const uint16_t pad, const uint16_t pool, bnDtype* /*__restrict*/ mean, bnDtype* /*__restrict*/ var, bnDtype* /*__restrict*/ gamma, bnDtype* /*__restrict*/ beta, uint8_t in_bit, uint8_t out_bit);
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/no padding/ no pooling/.
  */
-void Cn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut);
+void Cn3pxn(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pInd, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/padding/ no pooling/.
  */
-void CnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad);
+void CnPd3pxn(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, const uint8_t pad, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/padding/pooling/.
  */
-void CnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool);
+void CnPdPl3pxn(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, const uint8_t pad, const uint8_t pool, uint8_t in_bit, uint8_t out_bit);
 
 
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/no padding/ no pooling/batch norm.
  */
-void CnBn3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pIn, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void CnBn3pxn(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, pckDtype * /*__restrict*/ thresh, pckDtype * /*__restrict*/ sign, pckDtype* /*__restrict*/ offset, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/no padding/ no pooling/batch norm.
  */
-void CnBn3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pIn, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+void CnBn3pxnNoBin(pckDtype* /*__restrict*/ pAct, pckDtype* /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, const uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* /*__restrict*/ pOut, bnDtype* /*__restrict*/ mean, bnDtype* /*__restrict*/ var, bnDtype* /*__restrict*/ gamma, bnDtype* /*__restrict*/ beta, uint8_t in_bit, uint8_t out_bit);
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/padding/ no pooling/batch norm.
  */
-void CnBnPd3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void CnBnPd3pxn(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, const uint8_t pad, pckDtype * /*__restrict*/ thresh, pckDtype * /*__restrict*/ sign, pckDtype* /*__restrict*/ offset, uint8_t in_bit, uint8_t out_bit);
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/padding/ no pooling/batch norm.
  */
-void CnBnPd3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+void CnBnPd3pxnNoBin(pckDtype* /*__restrict*/ pAct, pckDtype* /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* /*__restrict*/ pOut, const uint8_t pad, bnDtype* /*__restrict*/ mean, bnDtype* /*__restrict*/ var, bnDtype* /*__restrict*/ gamma, bnDtype* /*__restrict*/ beta, uint8_t in_bit, uint8_t out_bit);
 #ifdef NEON
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/padding/ no pooling/batch norm/NEON.
  */
-void CnBnPd3pxnNeonQ4(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pIn, const uint8_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void CnBnPd3pxnNeonQ4(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, const uint8_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, const uint8_t pad, bnDtype * /*__restrict*/ thresh, pckDtype * /*__restrict*/ sign);
 #endif
 
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/padding/pooling/batch norm.
  */
-void CnBnPdPl3pxn(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void CnBnPdPl3pxn(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, const uint8_t pad, const uint8_t pool, pckDtype * /*__restrict*/ thresh, pckDtype * /*__restrict*/ sign, pckDtype* /*__restrict*/ offset, uint8_t in_bit, uint8_t out_bit);
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/padding/pooling/batch norm.
  */
-void CnBnPdPl3pxnNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, uint8_t* __restrict pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+void CnBnPdPl3pxnNoBin(pckDtype* /*__restrict*/ pAct, pckDtype* /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, uint16_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* /*__restrict*/ pOut, const uint8_t pad, const uint8_t pool, bnDtype* /*__restrict*/ mean, bnDtype* /*__restrict*/ var, bnDtype* /*__restrict*/ gamma, bnDtype* /*__restrict*/ beta, uint8_t in_bit, uint8_t out_bit);
 #ifdef NEON
 /**
  * @brief 3PXNet binarized convolutional (CN) layer with output binarization - array/padding/pooling/batch norm/NEON.
  */
-void CnBnPdPl3pxnNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, uint8_t* __restrict pIn, const uint8_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void CnBnPdPl3pxnNeonQ(pckDtype * /*__restrict*/ pAct, pckDtype * /*__restrict*/ pKrn, uint8_t* /*__restrict*/ pIn, const uint8_t kLen, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * /*__restrict*/ pOut, const uint8_t pad, const uint8_t pool, bnDtype * /*__restrict*/ thresh, pckDtype * /*__restrict*/ sign);
 #endif
 
 

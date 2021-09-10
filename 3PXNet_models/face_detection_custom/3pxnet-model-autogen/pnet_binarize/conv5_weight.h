@@ -1,6 +1,6 @@
 #define _conv5_weight {\
-0xdb73edaf, \
-0x100d7009, \
-0xfd0ac5f6, \
-0xffa2faaf, \
+0xb2807fea, \
+0x3b76b435, \
+0x2bba4523, \
+0xf94193fb, \
 }

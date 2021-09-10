@@ -47,49 +47,49 @@ extern "C" {
 /**
  * @brief Dense binarized Convolutional (CN) layer with output binarization - general wrapper.
  */
-uint8_t CnXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype * __restrict thresh, pckDtype * sign);
+uint8_t CnXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint16_t pad, const uint16_t pool, pckDtype * __restrict thresh, pckDtype * sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
 
-uint8_t CnXnorNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+uint8_t CnXnorNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Convolutional (CN) layer with output binarization - XY outer loop
  */
-void CnXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut);
+void CnXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, padding
  */ 
-void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad);
+void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, pooling
  */
-void CnPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pool);
+void CnPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pool, uint8_t in_bit, uint8_t out_bit);
 
 
 /**
  * @brief  Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, padding/pooling
  */
-void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool);
+void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, uint8_t in_bit, uint8_t out_bit);
 
 
 /**
  * @brief Dense binarized Convolutional (CN) layer with output binarization - Kernel outer loop, batch norm
  */
-void CnBnXnorKOut(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * sign);
+void CnBnXnorKOut(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * sign);
 
-void CnBnXnorKOutNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+void CnBnXnorKOutNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, batch norm
  */ 
-void CnBnXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * sign);
-void CnBnXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+void CnBnXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
+void CnBnXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit);
 /**
  * @brief Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, batch norm, padding
  */ 
-void CnBnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, bnDtype * __restrict thresh, pckDtype * sign);
-void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad,bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+void CnBnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, pckDtype * __restrict thresh, pckDtype * sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
+void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad,bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit);
 #ifdef NEON
 /**
  * @brief  Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, batch norm, padding, NEON
@@ -99,14 +99,14 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
 /**
  * @brief Dense binarized Convolutional (Cn) layer with output binarization - XY outer loop, batch norm, pooling
  */ 
-void CnBnPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pool, bnDtype * __restrict thresh, pckDtype * sign);
-void CnBnPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+void CnBnPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pool, pckDtype * __restrict thresh, pckDtype * sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
+void CnBnPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, batch norm, padding, pooling
  */ 
-void CnBnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype * __restrict thresh, pckDtype * sign);
-void CnBnPdPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta);
+void CnBnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, pckDtype * __restrict thresh, pckDtype * sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
+void CnBnPdPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit);
 #ifdef NEON
 /**
  * @brief Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, batch norm, padding, pooling, NEON

@@ -43,6 +43,8 @@ extern "C" {
 /// Activation/intermediate value size
 #define actWdt   16
     
+/// Activation bitwidth
+#define bitwidth 2
 /// Packed format datatype
 #define pckDtype int32_t
 /// Packed format width

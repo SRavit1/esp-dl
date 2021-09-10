@@ -48,23 +48,23 @@ extern "C" {
 /**
  * @brief 3PXNet binarized Fully Connected (FC) layer with output binarization - general wrapper.
  */
-uint8_t Fc3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+uint8_t Fc3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer without output binarization - general wrapper.
  */
-uint8_t Fc3pxnNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta);
+uint8_t Fc3pxnNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer with output binarization - pointer version
  */
-void Fc3pxnPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut);
+void Fc3pxnPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer with output binarization - array version
  */
-void Fc3pxnArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut);
+void Fc3pxnArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 
 #ifdef NEON
 
@@ -82,12 +82,12 @@ void Fc3pxnNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer without output binarization - pointer version
  */
-void Fc3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut);
+void Fc3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer without output binarization - array version
  */
-void Fc3pxnArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut);
+void Fc3pxnArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, uint8_t in_bit, uint8_t out_bit);
 
 #ifdef NEON
 
@@ -105,12 +105,12 @@ void Fc3pxnNeonQNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, ui
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer with output binarization - pointer version, batch norm
  */
-void FcBn3pxnPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void FcBn3pxnPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype* __restrict thresh, pckDtype* __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief 3PXNet binarized Fully Connected (FC) layer with output binarization - array version, batch norm
  */
-void FcBn3pxnArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign);
+void FcBn3pxnArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype* __restrict thresh, pckDtype* __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit);
 
 #ifdef NEON
 
@@ -128,12 +128,12 @@ void FcBn3pxnNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer without output binarization - pointer version, batch norm
  */
-void FcBn3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta);
+void FcBn3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 /**
  * @brief  3PXNet binarized Fully Connected (FC) layer without output binarization - array version, batch norm
  */
-void FcBn3pxnArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta);
+void FcBn3pxnArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit);
 
 #ifdef NEON
 

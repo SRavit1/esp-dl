@@ -48,8 +48,9 @@ extern "C" {
 /**
  * @brief Dense binary-weight Convolutional (CN) layer with output binarization.
  */ 
-void CnBnBwn(uint8_t * restrict pAct, int8_t * restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, const uint16_t pad, const uint16_t pool, pckDtype * restrict pOut, bnDtype * restrict thresh, pckDtype * sign);
-
+void CnBwnWrap(int8_t* /*restrict*/ pAct, int8_t* /*restrict*/ pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, const uint16_t pad, const uint16_t pool, pckDtype* /*restrict*/ pOut, pckDtype* /*restrict*/ thresh, pckDtype* sign, pckDtype* /*__restrict*/ offset, uint8_t out_bit);
+void CnBnBwn(int8_t * /*restrict*/ pAct, int8_t * /*restrict*/ pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, const uint16_t pad, const uint16_t pool, pckDtype * /*restrict*/ pOut, pckDtype * /*restrict*/ thresh, pckDtype * sign, pckDtype* /*__restrict*/ offset, uint8_t out_bit);
+void CnBwn(int8_t* /*restrict*/ pAct, int8_t* /*restrict*/ pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, const uint16_t pad, const uint16_t pool, pckDtype* /*restrict*/ pOut, uint8_t out_bit);
 #ifdef __cplusplus
 }
 #endif

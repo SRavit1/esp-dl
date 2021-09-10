@@ -31,7 +31,8 @@
  */
 
 #include "xnor_cn.h"
-
+#include <limits.h>
+#include <stdio.h>
 /**
  * @details Dense binarized Convolutional (CN) layer with output binarization - general wrapper.
  * Selects the appropriate implementation (batch normalization, NEON support)
@@ -52,7 +53,7 @@
  * @param[in] sign - pointer to the packed batch normalization signs
  * @return 0 - Success, 1 - Failure
  */
-uint8_t CnXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype * __restrict thresh, pckDtype * sign) {
+uint8_t CnXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint16_t pad, const uint16_t pool, pckDtype * __restrict thresh, pckDtype * sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
    // Batch Norm present (thresh != NULL)
    if (thresh) {
@@ -79,22 +80,22 @@ uint8_t CnXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const
          if (pad == 0) {
             // No pooling
             if (pool == 1) {
-               CnBnXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, thresh, sign);
+               CnBnXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, thresh, sign, offset, in_bit, out_bit);
             }
             // Pooling
             else {
-               CnBnPlXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pool, thresh, sign);
+               CnBnPlXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pool, thresh, sign, offset, in_bit, out_bit);
             }
          }
          // Padding
          else {
             // No pooling
             if (pool == 1) {
-               CnBnPdXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, thresh, sign);
+               CnBnPdXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, thresh, sign, offset, in_bit, out_bit);
             }
             // Pooling
             else {
-               CnBnPdPlXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, thresh, sign);
+               CnBnPdPlXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, thresh, sign, offset, in_bit, out_bit);
             }
 
          }
@@ -126,23 +127,23 @@ uint8_t CnXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const
          if (pad == 0) {
             // No pooling
             if (pool == 1) {
-               CnXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut);
+               CnXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, in_bit, out_bit);
                //CnXnorKOut(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut);
             }
             // Pooling
             else {
-               CnPlXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pool);
+               CnPlXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pool, in_bit, out_bit);
             }
          }
          // Padding
          else {
             // No pooling
             if (pool == 1) {
-               CnPdXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad);
+               CnPdXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, in_bit, out_bit);
             }
             // Pooling
             else {
-               CnPdPlXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool);
+               CnPdPlXnor(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, in_bit, out_bit);
             }
 
          }
@@ -154,7 +155,7 @@ uint8_t CnXnorWrap(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const
 
 
 
-uint8_t CnXnorNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
+uint8_t CnXnorNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint16_t pad, const uint16_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
 
     // Batch Norm present (thresh != NULL)
     if (mean) {
@@ -181,22 +182,22 @@ uint8_t CnXnorNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, co
             if (pad == 0) {
                 // No pooling
                 if (pool == 1) {
-                    CnBnXnorNoBin(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, mean, var, gamma, beta);
+                    CnBnXnorNoBin(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, mean, var, gamma, beta, in_bit, out_bit);
                 }
                 // Pooling
                 else {
-                    CnBnPlXnorNoBin(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pool, mean,var,gamma,beta);
+                    CnBnPlXnorNoBin(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pool, mean,var,gamma,beta, in_bit, out_bit);
                 }
             }
             // Padding
             else {
                 // No pooling
                 if (pool == 1) {
-                    CnBnPdXnorNoBin(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, mean, var,gamma,beta);
+                    CnBnPdXnorNoBin(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, mean, var,gamma,beta, in_bit, out_bit);
                 }
                 // Pooling
                 else {
-                    CnBnPdPlXnorNoBin(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, mean, var,gamma,beta);
+                    CnBnPdPlXnorNoBin(pAct, pKrn, dpth, wdth, hght, kdpt, kwdt, khgt, knum, pOut, pad, pool, mean, var,gamma,beta, in_bit, out_bit);
                 }
 
             }
@@ -223,57 +224,103 @@ uint8_t CnXnorNoBinWrap(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, co
  * @param[in] knum - number of kernels 
  * @param[out] pOut - pointer to the packed output vector (row-column-depth)
  */
-void CnXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut) {
+void CnXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype* __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
 
-   // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
-   pckDtype pckTemp = 0;
-   // Moving kernel pointer
-   pckDtype *pWgt = pKrn;
-   pckDtype *pIn  = pAct;
-   pckDtype *pRes = pOut;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
-   uint16_t  cntCoeff = khgt*kwdt*kdpt/2;
-   
-   // Y dim
-   for (uint16_t y = 0; y < (hght-khgt+1); y++) {
-      // X dim
-      for (uint16_t x = 0; x < (wdth-kwdt+1); x++) {
-         // Outer loop - kernels
-         pWgt = pKrn;   
-         //pRes = pOut + (y*(wdth-kwdt+1)+x)*knum/pckWdt;
-         for (uint16_t k = 0; k<knum/pckWdt; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               pIn = pAct + y*yCoeff + x*xCoeff;
-               outTemp = 0;
-               // K-Y dim
-               for (uint16_t ky = 0; ky < khgt; ky++) {
-                  // K-X dim
-                  for (uint16_t kx = 0; kx < kwdt*dpth/pckWdt; kx++) {
-                     // XNOR multiplication
-                     xnorTmp = ~ ( *pIn++ ^ *pWgt++ ); 
-                     outTemp += popcount(xnorTmp);
-                  } // K-X dim
-                  // Move the activation pointer one row down
-                  pIn += (wdth-kwdt)*dpth/pckWdt;
-               } // K-Y dim
-               // We've only counted ones, but we want a difference between +1s and -1s 
-               // so we need to adjust the result
-               // Below is shorter for
-               // outTemp = outTemp - (2*cntCoeff - outTemp);
-               // outTemp = outTemp >= 0;
-               outTemp = outTemp >= cntCoeff;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
+    // Temporary variables
+    uint32_t xnorTemp;
+    int32_t  outTemp;
+    int32_t pckTemp[out_bit];
+    // Moving kernel pointer
+    pckDtype* pWgt = pKrn;
+    pckDtype* pIn = pAct;
+    pckDtype* pRes = pOut;
+    uint16_t  yCoeff = wdth * dpth * in_bit / pckWdt;
+    uint16_t  xCoeff = dpth * in_bit / pckWdt;
+    uint16_t  cntCoeff = khgt * kwdt * kdpt;
+    int32_t out = 0;
+    uint8_t output_bit = 0;
+    // Y dim
+    for (uint16_t y = 0; y < (hght - khgt + 1); y++) {
+        // X dim
+        for (uint16_t x = 0; x < (wdth - kwdt + 1); x++) {
+            // Outer loop - kernels
+            pWgt = pKrn;
+            //pRes = pOut + (y*(wdth-kwdt+1)+x)*knum/pckWdt;
+            for (uint16_t k = 0; k < knum / pckWdt; k++) {
+                // Packed slices
+                memset(pckTemp, 0, sizeof(pckTemp));
+                for (uint16_t ks = 0; ks < pckWdt; ks++) {
+                    pIn = pAct + y * yCoeff + x * xCoeff;
+                    outTemp = 0;
+                    out = 0;
+                    output_bit = 0;
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        pIn += bitw;
+                        // K-Y dim
+                        for (uint16_t ky = 0; ky < khgt; ky++) {
+                            // K-X dim
+                            for (uint16_t kx = 0; kx < kwdt * dpth / pckWdt; kx++) {
+                                // XNOR multiplication
+                                xnorTemp = ~(*(pIn) ^ *(pWgt++));
+                                outTemp += popcount(xnorTemp);
+                                pIn += in_bit;
+                            }// K-X dim     
+                            // Move the activation pointer one row down 
+                            pIn += (wdth - kwdt) * dpth * in_bit / pckWdt - bitw;
+                        }// K-Y dim   
+                        pWgt -= cntCoeff / pckWdt;
+                        // Adjust the output value
+                        outTemp = outTemp - (cntCoeff - outTemp);
+                        // Get the int full precision value 
+                        out += (outTemp << (in_bit - bitw - 1));
+                        int up_thresh = 0;
+                        for (uint8_t bitt = bitw; bitt != in_bit; bitt++) {
+                            up_thresh += (cntCoeff << (in_bit - bitt - 1));
+                        }
+                        for (uint8_t bito = output_bit; bito != out_bit; bito++) {                            
+                            if (out > up_thresh) {
+                                pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                                out = out - (1 << (out_bit - bito - 1));
+                                output_bit++;
+                            }
+                            else if (out < -up_thresh) {
+                                pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                                out = out + (1 << (out_bit - bito - 1));
+                                output_bit++;
+                            }
+                            else {
+                                break;
+                            }
+                        }    
+                    }                    
+                    pWgt += cntCoeff / pckWdt;
+                    // We've only counted ones, but we want a difference between +1s and -1s 
+                    // so we need to adjust the result
+                    // Below is shorter for
+                    // outTemp = outTemp - (2*cntCoeff - outTemp);
+                    // outTemp = outTemp >= 0;
+                    /*
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        // Adjust the output value
+                        outTemp[bitw] = outTemp[bitw] - (cntCoeff - outTemp[bitw]);
+                        // Get the int full precision value
+                        out += (outTemp[bitw] << (in_bit - bitw - 1));
+                    }
+                    // Quantization
+                    for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                        int temp = out > 0;
+                        // Shift
+                        pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                        out = (temp == 0 ? out + (1 << (out_bit - bitw - 1)) : out - (1 << (out_bit - bitw - 1)));
+                    }
+                 }*/
+                }
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                            *pRes++ = pckTemp[bitw];
+                }
             }
-            *pRes++ = pckTemp;
-         }
-      }
-   }
+        }
+    }
 }
 
 /**
@@ -292,21 +339,23 @@ void CnXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16
  * @param[out] pOut - pointer to the packed output vector (row-column-depth)
  * @param[in] pad  - padding size
  */
-void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad) {
-
-   // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
-   pckDtype pckTemp = 0;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
-   // XY count for padding adjustment
-   uint8_t  xyCount = 0;
+void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, uint8_t in_bit, uint8_t out_bit) {
+    
+    // Temporary variables
+    uint32_t xnorTemp;
+    int32_t  outTemp;
+    int32_t pckTemp[out_bit];
    // Moving kernel pointer
    pckDtype *pWgt = pKrn;
    pckDtype *pIn  = pAct;
    pckDtype *pRes = pOut;
-   uint16_t  cntCoeff = khgt*kwdt*kdpt/2;
+   uint16_t  yCoeff  = wdth*dpth*in_bit/pckWdt;
+   uint16_t  xCoeff  = dpth*in_bit/pckWdt;
+   uint16_t  cntCoeff = khgt*kwdt*kdpt;
+   int32_t out = 0;
+   uint8_t output_bit = 0;
+   // XY count for padding adjustment
+   uint8_t  xyCount = 0;
    // Starting indices for padding
    uint16_t  xStart, yStart = 0;
    // Ending indices for padding
@@ -323,39 +372,65 @@ void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint
       // First n padded rows pad*(hght-khgt+2*pad+1)*knum/pckWdt
       // Already completed rows y*(hght-khgt+2*pad+1)*knum/pckWdt
       // Offset to this row pad*knum/pckWdt
-      pRes = pOut + (pad+y)*(hght-khgt+2*pad+1)*knum/pckWdt + pad*knum/pckWdt;
+      pRes = pOut + (pad+y)*(wdth-kwdt+2*pad+1)*knum*out_bit/pckWdt + pad*knum*out_bit/pckWdt;
       for (uint16_t x = 0; x < (wdth-kwdt+1); x++) {
          // Outer loop - kernels
          pWgt = pKrn;   
          //pRes = pOut + (y*(wdth-kwdt+1)+x)*knum/pckWdt;
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+             memset(pckTemp, 0, sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                pIn = pAct + y*yCoeff + x*xCoeff;
                outTemp = 0;
-               // K-Y dim
-               for (uint16_t ky = 0; ky < khgt; ky++) {
-                  // K-X dim
-                  for (uint16_t kx = 0; kx < kwdt*dpth/pckWdt; kx++) {
-                     // XNOR multiplication
-                     xnorTmp = ~ ( *pIn++ ^ *pWgt++ ); 
-                     outTemp += popcount(xnorTmp);
-                  } // K-X dim
+               out = 0;
+               output_bit = 0;
+               for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                   pIn= pAct + y * yCoeff + x * xCoeff;
+                   pIn += bitw;
+                    // K-Y dim
+                   for (uint16_t ky = 0; ky < khgt; ky++) {
+                       // K-X dim
+                       for (uint16_t kx = 0; kx < kwdt * dpth / pckWdt; kx++) {
+                           // XNOR multiplication
+                           xnorTemp = ~(*pIn ^ *(pWgt++));
+                           outTemp += popcount(xnorTemp);
+                           pIn += in_bit;
+                       }// K-X dim
+                       pIn += (wdth - kwdt) * dpth * in_bit / pckWdt - bitw;
+                   } // K-Y dim
                   // Move the activation pointer one row down
-                  pIn += (wdth-kwdt)*dpth/pckWdt;
-               } // K-Y dim
-               //goto end;
-               // We've only counted ones, but we want a difference between +1s and -1s 
-               // so we need to adjust the result
-               // Below is shorter for
-               // outTemp = outTemp - (2*cntCoeff - outTemp);
-               // outTemp = outTemp >= 0;
-               outTemp = outTemp >= cntCoeff;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
+                   pWgt -= cntCoeff / pckWdt;
+                   outTemp = outTemp - (cntCoeff - outTemp);
+                   // Get the int full precision value 
+                   out += (outTemp << (in_bit - bitw - 1));
+                   int up_thresh = 0;
+                   for (uint8_t bitt = bitw; bitt != in_bit; bitt++) {
+                       up_thresh += (cntCoeff << (in_bit - bitt - 1));
+                   }
+                   // Quantization
+                   for (uint8_t bito = output_bit; bito != out_bit; bito++) {
+                       
+                       if (out > up_thresh) {
+                           pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                           out = out - (1 << (out_bit - bito - 1));
+                           output_bit++;
+                       }
+                       else if (out < -up_thresh) {
+                           pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                           out = out + (1 << (out_bit - bito - 1));
+                           output_bit++;
+                       }
+                       else {
+                           break;
+                       }
+                   }
+               } 
+               pWgt += cntCoeff / pckWdt;
             }
-            *pRes++ = pckTemp;
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
+            }
          }
       }
    }
@@ -377,45 +452,69 @@ void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+             memset(pckTemp, 0, sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               outTemp = 0;
-               xyCount = 0;
-               // K-Y dim
-               for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                  // Move the input pointer to the first non-padded activation block
-                  pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                  // K-X dim
-                  for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                        xyCount++;
-                        // Z dim
-                        for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                           // popcount
-                           outTemp += popcount(xnorTmp);
-                        } // Z dim
-                  } // K-X dim
-                  // Move the weight poitner to the next row
-                  pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*kdpt - outTemp);
-               // Binarize
-               outTemp = outTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
+                outTemp = 0;
+                out = 0;
+                output_bit = 0;               
+               pckDtype* weight_temp = pWgt;
+               for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                   xyCount = 0;
+                   // K-Y dim
+                   for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                       // Move the input pointer to the first non-padded activation block
+                       pIn = pAct + (y + ky - pad) * yCoeff + (x + xStart - pad) * xCoeff;
+                       pIn += bitw;
+                       // K-X dim
+                       for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                           xyCount++;
+                           // Z dim
+                           for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                               // XNOR multiplication
+                               xnorTemp = ~(*pIn ^ *pWgt++);
+                               outTemp += popcount(xnorTemp);
+                               pIn += in_bit;
+                           }// Z dim        
+                       }// K-X dim 
+                        // Move the weight poitner to the next row
+                        pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                   } // K-Y dim
+                   if (bitw != in_bit - 1) pWgt = weight_temp;
+                   outTemp = outTemp - (xyCount * kdpt - outTemp);
+                   out += (outTemp << (in_bit - bitw - 1));
+                   int up_thresh = 0;
+                   for (uint8_t bitt = bitw; bitt != in_bit; bitt++) {
+                       up_thresh += ((xyCount*kdpt) << (in_bit - bitt - 1));
+                   }
+                   for (uint8_t bito = output_bit; bito != out_bit; bito++) {                       
+                       if (out > up_thresh) {
+                           pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                           out = out - (1 << (out_bit - bito - 1));
+                           output_bit++;
+                       }
+                       else if (out < -up_thresh) {
+                           pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                           out = out + (1 << (out_bit - bito - 1));
+                           output_bit++;
+                       }
+                       else {
+                           break;
+                       }
+                   }
+               }
                // Shift the weight pointer to the next kernel
                pWgt += yStart*kwdt*kdpt/pckWdt;
             }
-            *pRes++ = pckTemp;
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
+            }
          }
       }
    }
    
    // Bottom 
    // Move the ouput pointer
-   pRes = pOut + (hght-khgt+pad+1)*(wdth-kwdt+2*pad+1)*knum/pckWdt;
+   pRes = pOut + (hght-khgt+pad+1)*(wdth-kwdt+2*pad+1)*knum*out_bit/pckWdt;
    // Y dim
    for (uint16_t y = hght-khgt+pad+1; y < hght-khgt+2*pad+1; y++) {
       // Account for padding - skip padded values
@@ -431,45 +530,68 @@ void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+             memset(pckTemp, 0, sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               outTemp = 0;
-               xyCount = 0;
-               // K-Y dim
-               for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                  // Move the input pointer to the first non-padded activation block
-                  pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                  // K-X dim
-                  for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                        xyCount++;
-                        // Z dim
-                        for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                           // popcount
-                           // Accumulation
-                           outTemp += popcount(xnorTmp);
-                        } // Z dim
-                  } // K-X dim
-                  // Move the weight poitner to the next row
-                  pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*kdpt - outTemp);
-               // Binarize
-               outTemp = outTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
+                outTemp = 0;
+                out = 0;
+                output_bit = 0;            
+                pckDtype* weight_temp = pWgt;
+               for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                   xyCount = 0;
+                   // K-Y dim
+                   for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                       // Move the input pointer to the first non-padded activation block
+                       pIn = pAct + (y + ky - pad) * yCoeff + (x + xStart - pad) * xCoeff;
+                       pIn += bitw;
+                       // K-X dim
+                       for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                           xyCount++;
+                           // Z dim
+                           for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                               // XNOR multiplication
+                               xnorTemp = ~(*pIn ^ *pWgt++);
+                               outTemp += popcount(xnorTemp);
+                               pIn += in_bit;
+                           }// Z dim
+                       } // K-X dim
+                       // Move the weight poitner to the next row
+                       pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                   } // K-Y dim
+                   if (bitw != in_bit - 1) pWgt = weight_temp;
+                   outTemp = outTemp - (xyCount * kdpt - outTemp);
+                   out += (outTemp << (in_bit - bitw - 1));
+                   int up_thresh = 0;
+                   for (uint8_t bitt = bitw; bitt != in_bit; bitt++) {
+                       up_thresh += ((xyCount*kdpt) << (in_bit - bitt - 1));
+                   }
+                   for (uint8_t bito = output_bit; bito != out_bit; bito++) {                       
+                       if (out > up_thresh) {
+                           pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                           out = out - (1 << (out_bit - bito - 1));
+                           output_bit++;
+                       }
+                       else if (out < -up_thresh) {
+                           pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                           out = out + (1 << (out_bit - bito - 1));
+                           output_bit++;
+                       }
+                       else {
+                           break;
+                       }
+                   }
+               } 
                // Shift the weight pointer to the next kernel
                pWgt += (khgt-yEnd+yStart)*kwdt*kdpt/pckWdt;
             }
-            *pRes++ = pckTemp;
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
+            }
          }
       }
    }
   
    // Left 
-   pRes = pOut + pad*(wdth-kwdt+2*pad+1)*knum/pckWdt;
+   pRes = pOut + pad*(wdth-kwdt+2*pad+1)*knum*out_bit/pckWdt;
    // Y dim
    for (uint16_t y = pad; y < hght-khgt+pad+1; y++) {
       // Account for padding - skip padded values
@@ -485,46 +607,68 @@ void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               outTemp = 0;
-               xyCount = 0;
-               // K-Y dim
-               for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                  // Move the input pointer to the first non-padded activation block
-                  pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                  // K-X dim
-                  for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                        xyCount++;
-                        // Z dim
-                        for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                           // popcount
-                           // Accumulation
-                           outTemp += popcount(xnorTmp);
-                        } // Z dim
-                  } // K-X dim
-                  // Move the weight poitner to the next row
-                  pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*kdpt - outTemp);
-               // Binarize
-               outTemp = outTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
+             memset(pckTemp, 0, sizeof(pckTemp));
+             for (uint16_t ks = 0; ks < pckWdt; ks++) {
+                 outTemp = 0;
+                 out = 0;
+                 output_bit = 0;
+                 pckDtype* weight_temp = pWgt;
+                 for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                     xyCount = 0;
+                     // K-Y dim
+                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                         // Move the input pointer to the first non-padded activation block
+                         pIn = pAct + (y + ky - pad) * yCoeff + (x + xStart - pad) * xCoeff;
+                         pIn += bitw;
+                         // K-X dim
+                         for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                             xyCount++;
+                             // Z dim
+                             for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                 // XNOR multiplication
+                                 xnorTemp = ~(*pIn ^ *pWgt++);
+                                 outTemp += popcount(xnorTemp);
+                             }// Z dim
+                         } // K-X dim
+                         // Move the weight poitner to the next row
+                         pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                     } // K-Y dim
+                     if (bitw != in_bit - 1) pWgt = weight_temp;
+                     outTemp = outTemp - (xyCount * kdpt - outTemp);
+                     out += (outTemp << (in_bit - bitw - 1));
+                     int up_thresh = 0;
+                     for (uint8_t bitt = bitw; bitt != in_bit; bitt++) {
+                         up_thresh += ((xyCount*kdpt) << (in_bit - bitt - 1));
+                     }
+                     for (uint8_t bito = output_bit; bito != out_bit; bito++) {                         
+                         if (out > up_thresh) {
+                             pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                             out = out - (1 << (out_bit - bito - 1));
+                             output_bit++;
+                         }
+                         else if (out < -up_thresh) {
+                             pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                             out = out + (1 << (out_bit - bito - 1));
+                             output_bit++;
+                         }
+                         else {
+                             break;
+                         }
+                     }
+                 } 
                // Shift the weight pointer to the next kernel
                pWgt += (khgt-yEnd+yStart)*kwdt*kdpt/pckWdt;
-            }
-            *pRes++ = pckTemp;
+             }
+             for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                 *pRes++ = pckTemp[bitw];
+             }
          }
       }
-      pRes = pOut + (y+1)*(wdth-kwdt+2*pad+1)*knum/pckWdt;
+      pRes = pOut + (y+1)*(wdth-kwdt+2*pad+1)*knum*out_bit/pckWdt;
    }
 
    // Right 
-   pRes = pOut + pad*(wdth-kwdt+2*pad+1)*knum/pckWdt + (wdth-kwdt+pad+1)*knum/pckWdt;
+   pRes = pOut + pad*(wdth-kwdt+2*pad+1)*knum*out_bit/pckWdt + (wdth-kwdt+pad+1)*knum*out_bit/pckWdt;
    // Y dim
    for (uint16_t y = pad; y < hght-khgt+pad+1; y++) {
       // Account for padding - skip padded values
@@ -540,42 +684,63 @@ void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               outTemp = 0;
-               xyCount = 0;
-               // K-Y dim
-               for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                  // Move the input pointer to the first non-padded activation block
-                  pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                  // K-X dim
-                  for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                        xyCount++;
-                        // Z dim
-                        for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                           // popcount
-                           // Accumulation
-                           outTemp += popcount(xnorTmp);
-                        } // Z dim
-                  } // K-X dim
-                  // Move the weight poitner to the next row
-                  pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*kdpt - outTemp);
-               // Binarize
-               outTemp = outTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
+            memset(pckTemp, 0, sizeof(pckTemp));
+            for (uint16_t ks = 0; ks < pckWdt; ks++) {
+                outTemp = 0;
+                out = 0; 
+                pckDtype* weight_temp = pWgt;
+                for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                    xyCount = 0;
+                    // K-Y dim
+                    for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                        // Move the input pointer to the first non-padded activation block
+                        pIn = pAct + (y + ky - pad) * yCoeff + (x + xStart - pad) * xCoeff;
+                        // K-X dim
+                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                            xyCount++;
+                            // Z dim
+                            for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                // XNOR multiplication
+                                xnorTemp = ~(*pIn ^ *pWgt++);
+                                outTemp += popcount(xnorTemp);
+                                pIn += in_bit;
+                            }// Z dim
+                        } // K-X dim
+                        // Move the weight poitner to the next row
+                        pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                    } // K-Y dim
+                    if (bitw != in_bit - 1) pWgt = weight_temp;
+                    outTemp = outTemp - (xyCount * kdpt - outTemp);
+                    out += (outTemp << (in_bit - bitw - 1));
+                    int up_thresh = 0;
+                    for (uint8_t bitt = bitw; bitt != in_bit; bitt++) {
+                        up_thresh += ((xyCount*kdpt) << (in_bit - bitt - 1));
+                    }
+                    for (uint8_t bito = output_bit; bito != out_bit; bito++) {                        
+                        if (out > up_thresh) {
+                            pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                            out = out - (1 << (out_bit - bito - 1));
+                            output_bit++;
+                        }
+                        else if (out < -up_thresh) {
+                            pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                            out = out + (1 << (out_bit - bito - 1));
+                            output_bit++;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                } 
                // Shift the weight pointer to the next kernel
                pWgt += (khgt-yEnd+yStart)*kwdt*kdpt/pckWdt;
             }
-            *pRes++ = pckTemp;
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
+            }
          }
       }
-      pRes = pOut + (y+1)*(wdth-kwdt+2*pad+1)*knum/pckWdt + (wdth-kwdt+pad+1)*knum/pckWdt;
+      pRes = pOut + (y+1)*(wdth-kwdt+2*pad+1)*knum*out_bit/pckWdt + (wdth-kwdt+pad+1)*knum*out_bit/pckWdt;
    }
 }
 
@@ -596,67 +761,85 @@ void CnPdXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint
  * @param[out] pOut - pointer to the packed output vector (row-column-depth)
  * @param[in] pool - pooling size
  */
-void CnPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pool) {
+void CnPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pool, uint8_t in_bit, uint8_t out_bit) {
 
-   // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // For maxpooling
-   int32_t  maxTemp = 0;
-   //int32_t  *outTemp = malloc(pool*pool*sizeof(int32_t));
-   pckDtype pckTemp = 0;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
-   pckDtype *pWgt = pKrn;
-   pckDtype *pIn  = pAct;
-   pckDtype *pRes = pOut;
+    // Temporary variables
+    pckDtype xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    // For maxpooling
+    int32_t  maxTemp = 0;
+    int32_t out = 0;
+    //int32_t  *outTemp = malloc(pool*pool*sizeof(int32_t));
+    pckDtype pckTemp[out_bit];
+    uint16_t  yCoeff = wdth * dpth * in_bit / pckWdt;
+    uint16_t  xCoeff = dpth * in_bit / pckWdt;
+    pckDtype* pWgt = pKrn;
+    pckDtype* pIn = pAct;
+    pckDtype* pRes = pOut;
+    uint16_t  cntCoeff = khgt * kwdt * kdpt;
 
-   // Y dim
-   for (uint16_t y = 0; y < (hght-khgt+1)/pool; y++) {
-      // X dim
-      for (uint16_t x = 0; x < (wdth-kwdt+1)/pool; x++) {
-         // Outer loop - kernels
-         for (uint16_t k = 0; k<knum/pckWdt; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               // Mpool patches
-               maxTemp = -(khgt*kwdt*kdpt);
-               for (uint16_t yy = 0; yy < pool; yy++) {
-                  for (uint16_t xx = 0; xx < pool; xx++) {
-                     outTemp = 0;
-                     pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt;
-                     pIn = pAct + (y*pool+yy)*yCoeff + (x*pool+xx)*xCoeff;
-                     // K-Y dim
-                     for (uint16_t ky = 0; ky < khgt; ky++) {
-                        // K-X dim
-                        for (uint16_t kx = 0; kx < kwdt; kx++) {
-                           // Z dim
-                           for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                              // XNOR multiplication
-                              xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                              // popcount
-                              // Accumulation
-                              outTemp += popcount(xnorTmp);
-                           } // Z dim
-                        } // K-X dim
-                        pIn += (wdth-kwdt)*dpth/pckWdt;
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (khgt*kwdt*kdpt - outTemp);
-                     // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
-                  } // X-MP
-               } // Y-MP
-               // Binarize
-               maxTemp = maxTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+    // Y dim
+    for (uint16_t y = 0; y < (hght - khgt + 1) / pool; y++) {
+        // X dim
+        for (uint16_t x = 0; x < (wdth - kwdt + 1) / pool; x++) {
+            // Outer loop - kernels
+            for (uint16_t k = 0; k < knum / pckWdt; k++) {
+                // Packed slices
+                memset(pckTemp, 0, sizeof(pckTemp));
+                for (uint16_t ks = 0; ks < pckWdt; ks++) {
+                    // Mpool patches
+                    maxTemp = -(khgt * kwdt * kdpt);
+                    for (uint16_t yy = 0; yy < pool; yy++) {
+                        for (uint16_t xx = 0; xx < pool; xx++) {
+                            memset(outTemp, 0, sizeof(outTemp));
+                            out = 0;
+                            for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                pWgt = pKrn + (k * pckWdt + ks) * cntCoeff / pckWdt;
+                                pIn = pAct + (y * pool + yy) * yCoeff + (x * pool + xx) * xCoeff + bitw;
+                                // K-Y dim
+                                for (uint16_t ky = 0; ky < khgt; ky++) {
+                                    // K-X dim
+                                    for (uint16_t kx = 0; kx < kwdt; kx++) {
+                                        // Z dim
+                                        for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                            // XNOR multiplication
+                                            xnorTemp[bitw] = ~(*pIn ^ *pWgt++);
+                                            outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                            pIn += in_bit;
+                                        }// Z dim
+                                    } // K-X dim
+                                    pIn += (wdth - kwdt) * dpth * in_bit / pckWdt;
+                                } // K-Y dim
+                                // Adjust the output value
+                                outTemp[bitw] = outTemp[bitw] - (cntCoeff - outTemp[bitw]);
+                                // Get the int full precision value 
+                                out += (outTemp[bitw] << (in_bit - bitw - 1));
+                                int temp_thresh = 0;
+                                for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                                    temp_thresh += (cntCoeff << (in_bit - bitt - 1));
+                                }
+                                if (out + temp_thresh < maxTemp) {
+                                    break;
+                                }
+                            }                             
+                            // Maxpool
+                            if (out > maxTemp) { maxTemp = out; }
+                        } // X-MP
+                    } // Y-MP
+                    // Quantization
+                    for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                        int temp = maxTemp > 0;
+                        // Shift 
+                        pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                        maxTemp = (temp == 0 ? maxTemp + (1 << (out_bit - bitw - 1)) : maxTemp - (1 << (out_bit - bitw - 1)));
+                    }
+                }
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                    *pRes++ = pckTemp[bitw];
+                }
             }
-            *pRes++ = pckTemp;
-         }
-      }
-   }
+        }
+    }
 }
 
 
@@ -677,14 +860,15 @@ void CnPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint
  * @param[in] pad  - padding size
  * @param[in] pool - pooling size
  */
-void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool) {
+void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, const uint8_t pad, const uint8_t pool, uint8_t in_bit, uint8_t out_bit) {
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
-   pckDtype pckTemp = 0;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
+    pckDtype xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    pckDtype pckTemp[out_bit];
+   uint16_t  yCoeff  = wdth*dpth*in_bit/pckWdt;
+   uint16_t  xCoeff  = dpth*in_bit/pckWdt;
+   int32_t out = 0;
    // XY count for padding adjustment
    uint8_t  xyCount = 0;
    // Moving kernel pointer
@@ -699,6 +883,7 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
    // For maxpooling
    int32_t  maxTemp = 0;
 
+
    // Divide the input into 5 regions - top, bottom, left, right, middle 
    // Middle has no padding
 
@@ -710,45 +895,55 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
       // First n padded rows pad*(hght-khgt+2*pad+1)*knum/pckWdt
       // Already completed rows y*(hght-khgt+2*pad+1)*knum/pckWdt
       // Offset to this row pad*knum/pckWdt
-      pRes = pOut + (y)*((hght-khgt+2*pad+1)/pool)*knum/pckWdt + ((pad+pool-1)/pool)*knum/pckWdt;
+      pRes = pOut + (y)*((wdth-kwdt+2*pad+1)/pool)*knum*out_bit/pckWdt + ((pad+pool-1)/pool)*knum*out_bit/pckWdt;
       for (uint16_t x = ((pad+pool-1)/pool); x <= (wdth-kwdt+2*pad+1)/pool - 2*((pad+pool-1)/pool); x++) {
          // Outer loop - kernels
          pWgt = pKrn;   
          //pRes = pOut + (y*(wdth-kwdt+1)+x)*knum/pckWdt;
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp,0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(khgt*kwdt*kdpt);
+               maxTemp = -cntCoeff;
                for (uint16_t yy = 0; yy < pool; yy++) {
                   for (uint16_t xx = 0; xx < pool; xx++) {
-                     pIn = pAct + (y*pool+yy - pad)*yCoeff + (x*pool+xx- pad)*xCoeff;
-                     pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt;
-                     outTemp = 0;
-                     // K-Y dim
-                     for (uint16_t ky = 0; ky < khgt; ky++) {
-                        // K-X dim
-                        for (uint16_t kx = 0; kx < kwdt*dpth/pckWdt; kx++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++ ); 
-                           outTemp += popcount(xnorTmp);
-                        } // K-X dim
-                        // Move the activation pointer one row down
-                        pIn += (wdth-kwdt)*dpth/pckWdt;
-                     } // K-Y dim
-                     outTemp = 2*outTemp - cntCoeff;
+                      memset(outTemp, 0, sizeof(outTemp));
+                      out = 0;
+                      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                          pIn = pAct + (y * pool + yy - pad) * yCoeff + (x * pool + xx - pad) * xCoeff + bitw;
+                          pWgt = pKrn + (k * pckWdt + ks) * cntCoeff / pckWdt;
+                          // K-Y dim
+                          for (uint16_t ky = 0; ky < khgt; ky++) {
+                              // K-X dim
+                              for (uint16_t kx = 0; kx < kwdt * dpth / pckWdt; kx++) {
+                                  // XNOR multiplication
+                                  xnorTemp[bitw] = ~(*pIn ^ *pWgt++);
+                                  outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                  pIn += in_bit;
+                              }// K-X dim
+                              // Move the activation pointer one row down
+                              pIn += (wdth - kwdt) * dpth * in_bit / pckWdt;
+                          }// K-Y dim
+                          // Adjust the output value
+                          outTemp[bitw] = outTemp[bitw] - (cntCoeff - outTemp[bitw]);
+                          // Get the int full precision value 
+                          out += (outTemp[bitw] << (in_bit - bitw - 1));
+                      }
                      // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
-                     // Shift based on current kernel slice
+                     if (out > maxTemp) { maxTemp = out;}
                   } // X-MP
                } // Y-MP
-               // Binarize
-               maxTemp = maxTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = maxTemp > 0;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   maxTemp = (temp == 0 ? maxTemp + (1 << (out_bit - bitw - 1)) : maxTemp - (1 << (out_bit - bitw - 1)));
+               }
             }
-            *pRes++ = pckTemp;
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
+            }
          }
       }
    }
@@ -764,10 +959,10 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp, 0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(khgt*kwdt*kdpt);
+               maxTemp = -cntCoeff;
                for (uint16_t yy = 0; yy < pool; yy++) {
                   // Account for padding - skip padded values
                   if ((y*pool+yy) < pad) { yStart = pad-(y*pool+yy); } else { yStart = 0; }
@@ -776,48 +971,54 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
                      // Account for padding - skip padded values
                      if ((x*pool+xx) < pad) { xStart = pad-(x*pool+xx); } else { xStart = 0; }
                      if ((x*pool+xx) > wdth-kwdt+pad) { xEnd = wdth - ((x*pool+xx)-pad); } else { xEnd = kwdt; }
-                     outTemp = 0;
-                     // Move the wieight pointer to the fisrt useful (non-padded) weight block
-                     pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-                     xyCount = 0;
-                     // K-Y dim
-                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                        // Move the input pointer to the first non-padded activation block
-                        pIn = pAct + ((y*pool+yy)+ky-pad)*yCoeff + ((x*pool+xx)+xStart-pad)*xCoeff;
-                        // K-X dim
-                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                              xyCount++;
-                              // Z dim
-                              for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                                 // XNOR multiplication
-                                 xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                                 // popcount
-                                 outTemp += popcount(xnorTmp);
-                              } // Z dim
-                        } // K-X dim
-                        // Move the weight poitner to the next row
-                        pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*kdpt - outTemp);
+                     memset(outTemp,0,sizeof(outTemp));
+                     out = 0;
+                     for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                         // Move the wieight pointer to the fisrt useful (non-padded) weight block
+                         pWgt = pKrn + (k * pckWdt + ks) * cntCoeff / pckWdt + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+                         xyCount = 0;
+                         // K-Y dim
+                         for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                             // Move the input pointer to the first non-padded activation block
+                             pIn = pAct + ((y * pool + yy) + ky - pad) * yCoeff + ((x * pool + xx) + xStart - pad) * xCoeff + bitw;
+                             // K-X dim
+                             for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                 xyCount++;
+                                 // Z dim
+                                 for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                     // XNOR multiplication
+                                     xnorTemp[bitw] = ~(*pIn ^ *pWgt++);
+                                     outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                     pIn += in_bit;
+                                 }// Z dim
+                             } // K-X dim
+                             // Move the weight poitner to the next row
+                             pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                         } // K-Y dim
+                         outTemp[bitw] = outTemp[bitw] - (xyCount * kdpt - outTemp[bitw]);
+                         out += (outTemp[bitw] << (in_bit - bitw - 1));
+                     }
                      // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                     if (out > maxTemp) { maxTemp = out;}
                   }
                }
-               // Binarize
-               maxTemp = maxTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
-               // Shift the weight pointer to the next kernel
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = maxTemp > 0;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   maxTemp = (temp == 0 ? maxTemp + (1 << (out_bit - bitw - 1)) : maxTemp - (1 << (out_bit - bitw - 1)));
+               }
             }
-            *pRes++ = pckTemp;
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
+            }
          }
       }
    }
    
    // Bottom 
    // Move the ouput pointer
-   pRes = pOut + ((hght-khgt+2*pad)/pool + 1 - ((pad+pool-1)/pool))*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt;
+   pRes = pOut + ((hght-khgt+2*pad)/pool + 1 - ((pad+pool-1)/pool))*((wdth-kwdt+2*pad+1)/pool)*out_bit*knum/pckWdt;
    // Y dim
    for (uint16_t y = (hght-khgt+2*pad)/pool + 1 - ((pad+pool-1)/pool); y < (hght-khgt+2*pad)/pool + 1; y++) {
       // X dim
@@ -825,10 +1026,10 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp,0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(khgt*kwdt*kdpt);
+               maxTemp = -cntCoeff;
                for (uint16_t yy = 0; yy < pool; yy++) {
                   // Account for padding - skip padded values
                   if ((y*pool+yy) < pad) { yStart = pad-(y*pool+yy); } else { yStart = 0; }
@@ -837,47 +1038,53 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
                      // Account for padding - skip padded values
                      if ((x*pool+xx) < pad) { xStart = pad-(x*pool+xx); } else { xStart = 0; }
                      if ((x*pool+xx) > wdth-kwdt+pad) { xEnd = wdth - ((x*pool+xx)-pad); } else { xEnd = kwdt; }
-                     // Move the wieight pointer to the fisrt useful (non-padded) weight block
-                     pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-                     outTemp = 0;
-                     xyCount = 0;
-                     // K-Y dim
-                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                        // Move the input pointer to the first non-padded activation block
-                        pIn = pAct + ((y*pool+yy)+ky-pad)*yCoeff + ((x*pool+xx)+xStart-pad)*xCoeff;
-                        // K-X dim
-                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                              xyCount++;
-                              // Z dim
-                              for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                                 // XNOR multiplication
-                                 xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                                 // popcount
-                                 // Accumulation
-                                 outTemp += popcount(xnorTmp);
-                              } // Z dim
-                        } // K-X dim
-                        // Move the weight poitner to the next row
-                        pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*kdpt - outTemp);
+                     memset(outTemp, 0, sizeof(outTemp));
+                     out = 0;
+                     for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                         // Move the wieight pointer to the fisrt useful (non-padded) weight block
+                         pWgt = pKrn + (k * pckWdt + ks) * cntCoeff / pckWdt + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+                         xyCount = 0;
+                         // K-Y dim
+                         for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                             // Move the input pointer to the first non-padded activation block
+                             pIn = pAct + ((y * pool + yy) + ky - pad) * yCoeff + ((x * pool + xx) + xStart - pad) * xCoeff + bitw;
+                             // K-X dim
+                             for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                 xyCount++;
+                                 // Z dim
+                                 for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                     // XNOR multiplication
+                                     xnorTemp[bitw] = ~(*pIn ^ *pWgt++);
+                                     outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                     pIn += in_bit;
+                                 }// Z dim
+                             } // K-X dim
+                              // Move the weight poitner to the next row
+                             pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                         }// K-Y dim
+                         outTemp[bitw] = outTemp[bitw] - (xyCount * kdpt - outTemp[bitw]);
+                         out += (outTemp[bitw] << (in_bit - bitw - 1));
+                     }
                      // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                     if (out > maxTemp) { maxTemp = out; }
                   }
                }
-               // Binarize
-               maxTemp = maxTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = maxTemp > 0;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   maxTemp = (temp == 0 ? maxTemp + (1 << (out_bit - bitw - 1)) : maxTemp - (1 << (out_bit - bitw - 1)));
+               }
             }
-            *pRes++ = pckTemp;
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
+            }
          }
       }
    }
   
    //// Left 
-   pRes = pOut + ((pad+pool-1)/pool)*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt;
+   pRes = pOut + ((pad+pool-1)/pool)*((wdth-kwdt+2*pad+1)/pool)*knum*out_bit/pckWdt;
    // Y dim
    for (uint16_t y = ((pad+pool-1)/pool); y <= (hght-khgt+2*pad+1)/pool - 2*((pad+pool-1)/pool); y++) {
       // X dim
@@ -885,10 +1092,10 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp, 0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(khgt*kwdt*kdpt);
+                maxTemp = -cntCoeff;
                for (uint16_t yy = 0; yy < pool; yy++) {
                   // Account for padding - skip padded values
                   if ((y*pool+yy) < pad) { yStart = pad-(y*pool+yy); } else { yStart = 0; }
@@ -897,48 +1104,55 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
                      // Account for padding - skip padded values
                      if ((x*pool+xx) < pad) { xStart = pad-(x*pool+xx); } else { xStart = 0; }
                      if ((x*pool+xx) > wdth-kwdt+pad) { xEnd = wdth - ((x*pool+xx)-pad); } else { xEnd = kwdt; }
-                     outTemp = 0;
-                     xyCount = 0;
-                     // Move the wieight pointer to the fisrt useful (non-padded) weight block
-                     pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-                     // K-Y dim
-                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                        // Move the input pointer to the first non-padded activation block
-                        pIn = pAct + ((y*pool+yy)+ky-pad)*yCoeff + ((x*pool+xx)+xStart-pad)*xCoeff;
-                        // K-X dim
-                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                              xyCount++;
-                              // Z dim
-                              for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                                 // XNOR multiplication
-                                 xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                                 // popcount
-                                 // Accumulation
-                                 outTemp += popcount(xnorTmp);
-                              } // Z dim
-                        } // K-X dim
-                        // Move the weight poitner to the next row
-                        pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*kdpt - outTemp);
+                     memset(outTemp, 0,sizeof(outTemp));
+                     out = 0;
+                     for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                         xyCount = 0;
+                         // Move the wieight pointer to the fisrt useful (non-padded) weight block
+                         pWgt = pKrn + (k * pckWdt + ks) * cntCoeff / pckWdt + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+                         // K-Y dim
+                         for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                             // Move the input pointer to the first non-padded activation block
+                             pIn = pAct + ((y * pool + yy) + ky - pad) * yCoeff + ((x * pool + xx) + xStart - pad) * xCoeff + bitw;
+                             // K-X dim
+                             for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                 xyCount++;
+                                 // Z dim
+                                 for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                     // XNOR multiplication
+                                     xnorTemp[bitw] = ~(*pIn ^ *pWgt++);
+                                     outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                     pIn += in_bit;
+                                 }// Z dim
+                             } // K-X dim
+                             // Move the weight poitner to the next row
+                             pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                         } // K-Y dim
+                         outTemp[bitw] = outTemp[bitw] - (xyCount * kdpt - outTemp[bitw]);
+                         out += (outTemp[bitw] << (in_bit - bitw - 1));
+                     }
                      // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                     if (out > maxTemp) { maxTemp = out; }
                   }
                }
                // Binarize
-               maxTemp = maxTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = maxTemp > 0;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   maxTemp = (temp == 0 ? maxTemp + (1 << (out_bit - bitw - 1)) : maxTemp - (1 << (out_bit - bitw - 1)));
+               }
             }
-            *pRes++ = pckTemp;
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
+            }
          }
       }
-      pRes = pOut + (y+1)*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt;
+      pRes = pOut + (y+1)*((wdth-kwdt+2*pad+1)/pool)*knum*out_bit/pckWdt;
    }
 
    // Right 
-   pRes = pOut + ((pad+pool-1)/pool)*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + (((wdth-kwdt+2*pad+1)/pool) - ((pad+pool-1)/pool))*knum/pckWdt;
+   pRes = pOut + ((pad+pool-1)/pool)*((wdth-kwdt+2*pad+1)/pool)*knum*out_bit/pckWdt + (((wdth-kwdt+2*pad+1)/pool) - ((pad+pool-1)/pool))*knum*out_bit/pckWdt;
    // Y dim
    for (uint16_t y = ((pad+pool-1)/pool); y <= (hght-khgt+2*pad+1)/pool - 2*((pad+pool-1)/pool); y++) {
       // X dim
@@ -946,10 +1160,10 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp,0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(khgt*kwdt*kdpt);
+               maxTemp = -cntCoeff;
                for (uint16_t yy = 0; yy < pool; yy++) {
                   // Account for padding - skip padded values
                   if ((y*pool+yy) < pad) { yStart = pad-(y*pool+yy); } else { yStart = 0; }
@@ -958,182 +1172,54 @@ void CnPdPlXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const ui
                      // Account for padding - skip padded values
                      if ((x*pool+xx) < pad) { xStart = pad-(x*pool+xx); } else { xStart = 0; }
                      if ((x*pool+xx) > wdth-kwdt+pad) { xEnd = wdth - ((x*pool+xx)-pad); } else { xEnd = kwdt; }
-                     // Move the wieight pointer to the fisrt useful (non-padded) weight block
-                     pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-                     outTemp = 0;
-                     xyCount = 0;
-                     // K-Y dim
-                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                        // Move the input pointer to the first non-padded activation block
-                        pIn = pAct + ((y*pool+yy)+ky-pad)*yCoeff + ((x*pool+xx)+xStart-pad)*xCoeff;
-                        // K-X dim
-                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                           xyCount++;
-                           // Z dim
-                           for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                              // XNOR multiplication
-                              xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                              // popcount
-                              // Accumulation
-                              outTemp += popcount(xnorTmp);
-                           } // Z dim
-                        } // K-X dim
-                        // Move the weight poitner to the next row
-                        pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*kdpt - outTemp);
+                     memset(outTemp, 0,sizeof(outTemp));
+                     out = 0;
+                     for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                         // Move the wieight pointer to the fisrt useful (non-padded) weight block
+                         pWgt = pKrn + (k * pckWdt + ks) * cntCoeff / pckWdt + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+                         xyCount = 0;
+                         // K-Y dim
+                         for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                             // Move the input pointer to the first non-padded activation block
+                             pIn = pAct + ((y * pool + yy) + ky - pad) * yCoeff + ((x * pool + xx) + xStart - pad) * xCoeff + bitw;
+                             // K-X dim
+                             for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                 xyCount++;
+                                 // Z dim
+                                 for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                     // XNOR multiplication
+                                     xnorTemp[bitw] = ~(*pIn ^ *pWgt++);
+                                     outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                     pIn += in_bit;
+                                 }// Z dim
+                             } // K-X dim
+                             // Move the weight poitner to the next row
+                             pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                         }// K-Y dim
+                         outTemp[bitw] = outTemp[bitw] - (xyCount * kdpt - outTemp[bitw]);
+                         out += (outTemp[bitw] << (in_bit - bitw - 1));
+                     } 
                      // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                     if (out > maxTemp) { maxTemp = out; }
                   }
                }
                // Binarize
-               maxTemp = maxTemp >= 0;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
-            }
-            *pRes++ = pckTemp;
-         }
-      }
-      pRes = pOut + (y+1)*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt + (((wdth-kwdt+2*pad+1)/pool) - ((pad+pool-1)/pool))*knum/pckWdt;
-   }
-}
-
-/**
- * @details Dense binarized Convolutional (CN) layer with output binarization - Kernel outer loop, batch norm
- * Outer loop: kernel, Pad: no, Pool: no BatchNorm: yes, SIMD: none
- * 
- * @param[in] pAct - pointer to the packed activation vector (row-column-depth)
- * @param[in] pKrn - pointer to the packed weight matrix (kernel-row-column-depth flattened)
- * @param[in] dpth - input depth 
- * @param[in] wdth - input width 
- * @param[in] hght - input height
- * @param[in] kdpt - kernel depth 
- * @param[in] kwdt - kernel width 
- * @param[in] khgt - kernel height
- * @param[in] knum - number of kernels 
- * @param[out] pOut - pointer to the packed output vector (row-column-depth)
- * @param[in] thresh - pointer to batch normalization threshold 
- * @param[in] sign - pointer to the packed batch normalization signs
- */
-void CnBnXnorKOut(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * sign) {
-
-   // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
-   uint16_t  kCoeff  = khgt*kwdt*kdpt/pckWdt;
-   uint16_t  kyCoeff = kwdt*kdpt/pckWdt;
-   uint16_t  kxCoeff = kdpt/pckWdt;
-   pckDtype  signs = 0;
-   int8_t    signCur  = 0;
-
-   // Outer loop - kernels
-   for (uint16_t k = 0; k<knum/pckWdt; k++) {
-      // Grab a batch of bn signs for kernels
-      signs = *sign++;
-      // Packed slices
-      for (uint16_t ks = 0; ks<pckWdt; ks++) {
-         // Unpack current sign
-         signCur = (signs >> ks) & 1;
-         if (signCur == 0) {signCur = -1;}
-         // Y dim
-         for (uint16_t y = 0; y < (hght-khgt+1); y++) {
-            // X dim
-            for (uint16_t x = 0; x < (wdth-kwdt+1); x++) {
-               outTemp = 0;
-               // K-Y dim
-               for (uint16_t ky = 0; ky < khgt; ky++) {
-                  // K-X dim
-                  for (uint16_t kx = 0; kx < kwdt; kx++) {
-                     // Z dim
-                     for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                        // XNOR multiplication
-                        // (y+ky)*wdth*dpth/pckWdt - starting y position
-                        // (x+kx)*dpth/pckWdt - starting x position
-                        xnorTmp = ~ ( pAct[(y+ky)*yCoeff + (x+kx)*xCoeff + z] ^ pKrn[(k*pckWdt+ks)*kCoeff +  ky*kyCoeff + kx*kxCoeff + z]);
-                        // popcount
-                        xnorTmp = popcount(xnorTmp);
-                        // Accumulation
-                        outTemp += xnorTmp;
-                     } // Z dim
-                  } // K-X dim
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (khgt*kwdt*kdpt - outTemp);
-               // Batch normalize/ binarize
-               outTemp = (bnPrec) outTemp >= *thresh;
-               outTemp *= signCur;
-               outTemp = outTemp >= 0;
-               // Shift based on current kernel slice
-               outTemp = outTemp << (pckWdt-1-ks);
-               // First time writing to a given word, make sure to clear it
-               // Need to do that because we'll be oring into it 
-               if (ks == 0) {
-                  pOut[y*(wdth-kwdt+1)*knum/pckWdt + x*knum/pckWdt + k] = 0;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = maxTemp > 0;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   maxTemp = (temp == 0 ? maxTemp + (1 << (out_bit - bitw - 1)) : maxTemp - (1 << (out_bit - bitw - 1)));
                }
-               // Write out
-               pOut[y*(wdth-kwdt+1)*knum/pckWdt + x*knum/pckWdt + k] |= outTemp;
+            }
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = pckTemp[bitw];
             }
          }
-         // Each kernel has its own threshold
-         thresh++;
       }
+      pRes = pOut + (y+1)*((wdth-kwdt+2*pad+1)/pool)*knum*out_bit/pckWdt + (((wdth-kwdt+2*pad+1)/pool) - ((pad+pool-1)/pool))*knum*out_bit/pckWdt;
    }
-
 }
 
-void CnBnXnorKOutNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, 
-    const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, 
-    const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, 
-    bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
-    // Temporary variables
-    pckDtype xnorTmp = 0;
-    int32_t  outTemp = 0;
-    uint16_t  yCoeff = wdth * dpth / pckWdt;
-    uint16_t  xCoeff = dpth / pckWdt;
-    uint16_t  kCoeff = khgt * kwdt * kdpt / pckWdt;
-    uint16_t  kyCoeff = kwdt * kdpt / pckWdt;
-    uint16_t  kxCoeff = kdpt / pckWdt;
-
-    // Outer loop - kernels
-    for (uint16_t k = 0; k < knum / pckWdt; k++) {
-        // Grab a batch of bn signs for kernels
-        // Packed slices
-        for (uint16_t ks = 0; ks < pckWdt; ks++) {
-            // Y dim
-            for (uint16_t y = 0; y < (hght - khgt + 1); y++) {
-                // X dim
-                for (uint16_t x = 0; x < (wdth - kwdt + 1); x++) {
-                    outTemp = 0;
-                    // K-Y dim
-                    for (uint16_t ky = 0; ky < khgt; ky++) {
-                        // K-X dim
-                        for (uint16_t kx = 0; kx < kwdt; kx++) {
-                            // Z dim
-                            for (uint16_t z = 0; z < dpth / pckWdt; z++) {
-                                // XNOR multiplication
-                                // (y+ky)*wdth*dpth/pckWdt - starting y position
-                                // (x+kx)*dpth/pckWdt - starting x position
-                                xnorTmp = ~(pAct[(y + ky) * yCoeff + (x + kx) * xCoeff + z] ^ pKrn[(k * pckWdt + ks) * kCoeff + ky * kyCoeff + kx * kxCoeff + z]);
-                                // popcount
-                                xnorTmp = popcount(xnorTmp);
-                                // Accumulation
-                                outTemp += xnorTmp;
-                            } // Z dim
-                        } // K-X dim
-                    } // K-Y dim
-                    // Adjust the output value
-                    outTemp = outTemp - (khgt * kwdt * kdpt - outTemp);
-                    // Batch normalize
-                    *pOut++ = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
-                }
-            }
-            // Each kernel has its own threshold
-        }
-    }
-}
 /**
  * @details Dense binarized Convolutional (CN) layer with output binarization - XY outer loop, batch norm
  * Outer loop: XY, Pad: no, Pool: no BatchNorm: yes, SIMD: none
@@ -1151,81 +1237,101 @@ void CnBnXnorKOutNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, con
  * @param[in] thresh - pointer to batch normalization threshold 
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void CnBnXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * sign) {
-
-   // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
-   pckDtype pckTemp = 0;
-   // Moving kernel pointer
-   pckDtype *pWgt = pKrn;
-   pckDtype *pIn  = pAct;
-   pckDtype *pRes = pOut;
-   pckDtype  *signs = sign;
-   bnDtype   *threshLoc = thresh;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
-   uint16_t  cntCoeff = khgt*kwdt*kdpt/2;
-   
-   // Y dim
-   for (uint16_t y = 0; y < (hght-khgt+1); y++) {
-      // X dim
-      for (uint16_t x = 0; x < (wdth-kwdt+1); x++) {
-         threshLoc = thresh;
-         signs = sign;
-         // Outer loop - kernels
-         pWgt = pKrn;   
-         for (uint16_t k = 0; k<knum/pckWdt; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               pIn = pAct + y*yCoeff + x*xCoeff;
-               outTemp = 0;
-               // K-Y dim
-               for (uint16_t ky = 0; ky < khgt; ky++) {
-                  // K-X dim
-                  for (uint16_t kx = 0; kx < kwdt*dpth/pckWdt; kx++) {
-                     // XNOR multiplication
-                     xnorTmp = ~ ( *pIn++ ^ *pWgt++ ); 
-                     outTemp += popcount(xnorTmp);
-                  } // K-X dim
-                  // Move the activation pointer one row down
-                  pIn += (wdth-kwdt)*dpth/pckWdt;
-               } // K-Y dim
-               // We've only counted ones, but we want a difference between +1s and -1s 
-               // so we need to adjust the result
-               // Below is shorter for
-               // outTemp = outTemp - (2*cntCoeff - outTemp);
-               // outTemp = outTemp >= 0;
-               outTemp = outTemp - (2*cntCoeff-outTemp);
-               // Batch normalize/ binarize
-               outTemp = (bnPrec) outTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
-            }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
-         }
-      }
-   }
-}
-
-void CnBnXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth,
-    const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, 
-    const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut,
-    bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
-
+void CnBnXnor(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
     // Temporary variables
-    pckDtype xnorTmp = 0;
-    int32_t  outTemp = 0;
-    pckDtype pckTemp = 0;
+    pckDtype xnorTemp;
+    int32_t  outTemp;
+    pckDtype pckTemp[out_bit];
+    memset(pckTemp, 0, sizeof(pckTemp));
     // Moving kernel pointer
     pckDtype* pWgt = pKrn;
     pckDtype* pIn = pAct;
-    uint16_t  yCoeff = wdth * dpth / pckWdt;
-    uint16_t  xCoeff = dpth / pckWdt;
-    uint16_t  cntCoeff = khgt * kwdt * kdpt / 2;
+    pckDtype* pRes = pOut;
+    pckDtype* signs = sign;
+    pckDtype* offsets = offset;
+    pckDtype* threshLoc = thresh;
+    uint16_t  yCoeff = wdth * dpth * in_bit / pckWdt;
+    uint16_t  xCoeff = dpth * in_bit / pckWdt;
+    uint16_t  cntCoeff = khgt * kwdt * kdpt;
+    int out = 0;
+    // Y dim
+    for (uint16_t y = 0; y < (hght - khgt + 1); y++) {
+        // X dim
+        for (uint16_t x = 0; x < (wdth - kwdt + 1); x++) {
+            threshLoc = thresh;
+            signs = sign;
+            offsets = offset;
+            // Outer loop - kernels
+            pWgt = pKrn;
+            for (uint16_t k = 0; k < knum / pckWdt; k++) {
+                // Packed slices
+                out = 0;
+                for (uint16_t ks = 0; ks < pckWdt; ks++) {
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        pIn = pAct + y * yCoeff + x * xCoeff;
+                        outTemp = 0;
+                        // K-Y dim
+                        for (uint16_t ky = 0; ky < khgt; ky++) {
+                            // K-X dim
+                            for (uint16_t kx = 0; kx < kwdt * dpth / pckWdt; kx++) {
+                                // XNOR multiplication
+                                xnorTemp = ~(*pIn ^ *pWgt++);
+                                outTemp += popcount(xnorTemp);
+                                pIn += in_bit;
+                            }// K-X dim
+                             // Move the activation pointer one row down
+                            pIn += (wdth - kwdt) * dpth * in_bit / pckWdt;
+                        } // K-Y dim        
+                        pWgt -= cntCoeff / pckWdt;
+                        outTemp = outTemp - (cntCoeff - outTemp);
+                        // Get the int full precision value 
+                        out += (outTemp << (in_bit - bitw - 1));
+                    }
+                    int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+                    int temp = 0;
+                    for (int i = 0; i != in_bit; i++) {
+                        temp |= (1 << i);
+                    }
+                    temp = temp & out;
+                    out_temp += temp;
+                    for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                        int temp = out_temp > *threshLoc;
+                        // Shift 
+                        pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                        //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                        out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+                    }
+                    // Batch normalize/ binarize
+                    threshLoc++;
+                    offsets++;
+                }
+                //pckTemp = ~(pckTemp ^ *signs++);
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                    *pRes++ = pckTemp[bitw] & (*signs);
+                    pckTemp[bitw] = 0;
+                }
+                signs++;
+            }
+        }
+    }
+}
 
+void CnBnXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth,
+    const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt,
+    const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut,
+    bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
+    // Temporary variables
+    pckDtype xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    pckDtype pckTemp[out_bit];
+    // Moving kernel pointer
+    pckDtype* pWgt = pKrn;
+    pckDtype* pIn = pAct;
+    bnDtype* pRes = pOut;
+    uint16_t  yCoeff = wdth * dpth * in_bit / pckWdt;
+    uint16_t  xCoeff = dpth * in_bit / pckWdt;
+    uint16_t  cntCoeff = khgt * kwdt * kdpt;
+    int out = 0;
     // Y dim
     for (uint16_t y = 0; y < (hght - khgt + 1); y++) {
         // X dim
@@ -1234,28 +1340,37 @@ void CnBnXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const u
             pWgt = pKrn;
             for (uint16_t k = 0; k < knum; k++) {
                 // Packed slices
-                pckTemp = 0;
+                memset(pckTemp, 0, sizeof(pckTemp));
                 pIn = pAct + y * yCoeff + x * xCoeff;
-                outTemp = 0;
+                memset(outTemp, 0, sizeof(outTemp));
+                out = 0;
                 // K-Y dim
                 for (uint16_t ky = 0; ky < khgt; ky++) {
                     // K-X dim
                     for (uint16_t kx = 0; kx < kwdt * dpth / pckWdt; kx++) {
-                        // XNOR multiplication
-                        xnorTmp = ~(*pIn++ ^ *pWgt++);
-                        outTemp += popcount(xnorTmp);
+                        for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                            // XNOR multiplication
+                            xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+                            outTemp[bitw] += popcount(xnorTemp[bitw]);
+                        }
+                        pWgt++;
                     } // K-X dim
                     // Move the activation pointer one row down
-                    pIn += (wdth - kwdt) * dpth / pckWdt;
+                    pIn += (wdth - kwdt) * dpth * in_bit / pckWdt;
                 } // K-Y dim
                 // We've only counted ones, but we want a difference between +1s and -1s 
                 // so we need to adjust the result
                 // Below is shorter for
                 // outTemp = outTemp - (2*cntCoeff - outTemp);
                 // outTemp = outTemp >= 0;
-                outTemp = outTemp - (2 * cntCoeff - outTemp);
-                // Batch normalize/ binarize
-                float temp = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                    // Adjust the output value
+                    outTemp[bitw] = outTemp[bitw] - (cntCoeff - outTemp[bitw]);
+                    // Get the int full precision value 
+                    out += (outTemp[bitw] << (in_bit - bitw - 1));
+                }
+                float out_temp = out / (float)(1 << (in_bit));// pow(2, in_bit);
+                float temp = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                 pOut[k] = temp;
             }
         }
@@ -1280,325 +1395,583 @@ void CnBnXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const u
  * @param[in] thresh - pointer to batch normalization threshold 
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void CnBnPdXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype* __restrict pOut, const uint8_t pad, bnDtype* __restrict thresh, pckDtype* sign){
+void CnBnPdXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype* __restrict pOut, const uint8_t pad, pckDtype* __restrict thresh, pckDtype* sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
-   // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
-   pckDtype pckTemp = 0;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
-   // XY count for padding adjustment
-   uint8_t  xyCount = 0;
-   // Moving kernel pointer
-   pckDtype *pWgt = pKrn;
-   pckDtype *pIn  = pAct;
-   pckDtype *pRes = pOut;
-   pckDtype  *signs = sign;
-   bnDtype   *threshLoc = thresh;
-   uint16_t  cntCoeff = khgt*kwdt*kdpt/2;
-   // Starting indices for padding
-   uint16_t  xStart, yStart = 0;
-   // Ending indices for padding
-   uint16_t  xEnd, yEnd = 0;
+    // Temporary variables
+    pckDtype xnorTemp;
+    int32_t  outTemp;
+    pckDtype pckTemp[out_bit];
+    int out = 0;
+    uint8_t output_bit = 0;
+    uint16_t  yCoeff = wdth * dpth * in_bit / pckWdt;
+    uint16_t  xCoeff = dpth * in_bit / pckWdt;
+    // XY count for padding adjustment
+    uint8_t  xyCount = 0;
+    // Moving kernel pointer
+    pckDtype* pWgt = pKrn;
+    pckDtype* weight_temp = pWgt;
+    pckDtype* pIn = pAct;
+    pckDtype* pRes = pOut;
+    pckDtype* signs = sign;
+    pckDtype* threshLoc = thresh;
+    pckDtype* offsets = offset;
+    int out_acc = 0;
+    uint16_t  cntCoeff = khgt * kwdt * kdpt;
+    // Starting indices for padding
+    uint16_t  xStart, yStart = 0;
+    // Ending indices for padding
+    uint16_t  xEnd, yEnd = 0;
+    // Divide the input into 5 regions - top, bottom, left, right, middle 
+    // Middle has no padding
+    // Middle - no padding
+    // Y dim
+    for (uint16_t y = 0; y < (hght - khgt + 1); y++) {
+        // X dim
+        // Set the output pointer
+        // First n padded rows pad*(hght-khgt+2*pad+1)*knum/pckWdt
+        // Already completed rows y*(hght-khgt+2*pad+1)*knum/pckWdt
+        // Offset to this row pad*knum/pckWdt
+        pRes = pOut + (pad + y) * (wdth - kwdt + 2 * pad + 1) * knum * out_bit / pckWdt + pad * knum * out_bit / pckWdt;
+        for (uint16_t x = 0; x < (wdth - kwdt + 1); x++) {
+            // Outer loop - kernels
+            pWgt = pKrn;
+            threshLoc = thresh;
+            signs = sign;
+            offsets = offset;
+            //pRes = pOut + (y*(wdth-kwdt+1)+x)*knum/pckWdt;
+            for (uint16_t k = 0; k < knum / pckWdt; k++) {
+                // Packed slices
+                memset(pckTemp, 0, sizeof(pckTemp));
+                for (uint16_t ks = 0; ks < pckWdt; ks++) {
 
-   // Divide the input into 5 regions - top, bottom, left, right, middle 
-   // Middle has no padding
+                    output_bit = 0;
+                    out_acc = 0;
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        outTemp = 0;
+                        pIn = pAct + y * yCoeff + x * xCoeff + bitw;
+                        // K-Y dim
+                        for (uint16_t ky = 0; ky < khgt; ky++) {
+                            // K-X dim
+                            for (uint16_t kx = 0; kx < kwdt * dpth / pckWdt; kx++) {
+                                // XNOR multiplication
+                                xnorTemp = ~(*pIn ^ *pWgt++);
+                                outTemp += popcount(xnorTemp);
+                                pIn += in_bit;
+                            }// K-X dim
+                            // Move the activation pointer one row down
+                            pIn += (wdth - kwdt) * dpth * in_bit / pckWdt;
+                        } // K-Y dim
+                        pWgt -= cntCoeff / pckWdt;
+                        outTemp = outTemp - (cntCoeff - outTemp);
+                        // Get the int full precision value 
+                        out = (outTemp << (in_bit - bitw - 1));
+                        // Quantization
+                        int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+                        int temp = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp |= (1 << i);
+                        }
+                        temp = (temp & out) << (16 - in_bit);
+                        out_acc += out_temp + temp;
+                        int up_thresh = 0;
+                        int temp_thresh = 0;
+                        for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                            temp_thresh += (cntCoeff << (in_bit - bitt - 1));
+                        }
+                        int temp_fixed = temp_thresh >> (in_bit + 2) << (16);/// pow(2, in_bit);
+                        int temp_pack = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp_pack |= (1 << i);
+                        }
+                        temp_pack = (temp_pack & temp_thresh) << (16 - in_bit);
+                        up_thresh = temp_fixed + temp_pack;
+                        for (uint8_t bito = output_bit; bito != out_bit; bito++) {
+                            if (out_acc > *threshLoc + up_thresh) {
+                                pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                                out_acc += (1 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else if (out_acc < *threshLoc - up_thresh || (bitw == in_bit - 1)) {
+                                pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                                out_acc += (0 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        if (output_bit == out_bit) {
+                            break;
+                        }
+                    }
+                    threshLoc++;
+                    offsets++;
+                    pWgt += cntCoeff / pckWdt;
+                }
+                //pckTemp = ~(pckTemp ^ *signs++);
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                    *pRes++ = ~(pckTemp[bitw] ^ (*signs));
+                }
+                signs++;
+            }
+        }
+    }
+    // Top
+    pRes = pOut;
+    // Y dim
+    for (uint16_t y = 0; y < pad; y++) {
+        // Account for padding - skip padded values
+        if (y < pad) { yStart = pad - y; }
+        else { yStart = 0; }
+        if (y > hght - khgt + pad) { yEnd = hght - (y - pad); }
+        else { yEnd = khgt; }
+        // X dim
+        for (uint16_t x = 0; x < wdth - kwdt + 2 * pad + 1; x++) {
+            // Account for padding - skip padded values
+            if (x < pad) { xStart = pad - x; }
+            else { xStart = 0; }
+            if (x > wdth - kwdt + pad) { xEnd = wdth - (x - pad); }
+            else { xEnd = kwdt; }
+            // Move the wieight pointer to the fisrt useful (non-padded) weight block
+            pWgt = pKrn + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+            threshLoc = thresh;
+            signs = sign;
+            offsets = offset;
+            // Outer loop - kernels
+            for (uint16_t k = 0; k < knum / pckWdt; k++) {
+                // Packed slices
+                memset(pckTemp, 0, sizeof(pckTemp));
+                for (uint16_t ks = 0; ks < pckWdt; ks++) {
 
-   // Middle - no padding
-   // Y dim
-   for (uint16_t y = 0; y < (hght-khgt+1); y++) {
-      // X dim
-      // Set the output pointer
-      // First n padded rows pad*(hght-khgt+2*pad+1)*knum/pckWdt
-      // Already completed rows y*(hght-khgt+2*pad+1)*knum/pckWdt
-      // Offset to this row pad*knum/pckWdt
-      pRes = pOut + (pad+y)*(hght-khgt+2*pad+1)*knum/pckWdt + pad*knum/pckWdt;
-      for (uint16_t x = 0; x < (wdth-kwdt+1); x++) {
-         // Outer loop - kernels
-         pWgt = pKrn;   
-         threshLoc = thresh;
-         signs = sign;
-         //pRes = pOut + (y*(wdth-kwdt+1)+x)*knum/pckWdt;
-         for (uint16_t k = 0; k<knum/pckWdt; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               pIn = pAct + y*yCoeff + x*xCoeff;
-               outTemp = 0;
-               // K-Y dim
-               for (uint16_t ky = 0; ky < khgt; ky++) {
-                  // K-X dim
-                  for (uint16_t kx = 0; kx < kwdt*dpth/pckWdt; kx++) {
-                     // XNOR multiplication
-                     xnorTmp = ~ ( *pIn++ ^ *pWgt++ ); 
-                     outTemp += popcount(xnorTmp);
-                  } // K-X dim
-                  // Move the activation pointer one row down
-                  pIn += (wdth-kwdt)*dpth/pckWdt;
-               } // K-Y dim
-               // We've only counted ones, but we want a difference between +1s and -1s 
-               // so we need to adjust the result
-               // Below is shorter for
-               // outTemp = outTemp - (2*cntCoeff - outTemp);
-               // outTemp = outTemp >= 0;
-               outTemp = outTemp - (2*cntCoeff - outTemp);
-               // Batch normalize/ binarize
-               outTemp = (bnPrec) outTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
+                    out = 0;
+                    out_acc = 0;
+                    output_bit = 0;
+                    weight_temp = pWgt;
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        outTemp = 0;
+                        pWgt = weight_temp;
+                        xyCount = 0;
+                        // K-Y dim
+                        for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                            // Move the input pointer to the first non-padded activation block
+                            pIn = pAct + (y + ky - pad) * yCoeff + (x + xStart - pad) * xCoeff + bitw;
+                            // K-X dim
+                            for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                xyCount++;
+                                // Z dim
+                                for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                    // XNOR multiplication
+                                    xnorTemp = ~(*pIn ^ *pWgt++);
+                                    outTemp += popcount(xnorTemp);
+                                    pIn += in_bit;
+                                }// Z dim
+                            } // K-X dim
+                             // Move the weight poitner to the next row
+                            pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                        } // K-Y dim
+                        outTemp = outTemp - (xyCount * kdpt - outTemp);
+                        // Get the int full precision value 
+                        out = (outTemp << (in_bit - bitw - 1));
+                        // Quantization
+                        int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+                        int temp = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp |= (1 << i);
+                        }
+                        temp = (temp & out) << (16 - in_bit);
+                        out_acc += out_temp + temp;
+                        int up_thresh = 0;
+                        int temp_thresh = 0;
+                        for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                            temp_thresh += ((xyCount * kdpt) << (in_bit - bitt - 1));
+                        }
+                        int temp_fixed = temp_thresh >> (in_bit + 2) << (16);/// pow(2, in_bit);
+                        int temp_pack = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp_pack |= (1 << i);
+                        }
+                        temp_pack = (temp_pack & temp_thresh) << (16 - in_bit);
+                        up_thresh = temp_fixed + temp_pack;
+                        for (uint8_t bito = output_bit; bito != out_bit; bito++) {
+                            if (out_acc > *threshLoc + up_thresh) {
+                                pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                                out_acc += (1 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else if (out_acc < *threshLoc - up_thresh || (bitw == in_bit - 1)) {
+                                pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                                out_acc += (0 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        if (output_bit == out_bit) {
+                            break;
+                        }
+                    }
+                    threshLoc++;
+                    offsets++;
+                    // Shift the weight pointer to the next kernel
+                    pWgt += yStart * kwdt * kdpt / pckWdt;
+                }
+                //pckTemp = ~(pckTemp ^ *signs++);
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                    *pRes++ = ~(pckTemp[bitw] ^ (*signs));
+                }
+                signs++;
             }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
-         }
-      }
-   }
+        }
+    }
 
-   // Top
-   pRes = pOut;
-   // Y dim
-   for (uint16_t y = 0; y < pad; y++) {
-      // Account for padding - skip padded values
-      if (y < pad) { yStart = pad-y; } else { yStart = 0; }
-      if (y > hght-khgt+pad) { yEnd = hght - (y-pad); } else { yEnd = khgt; }
-      // X dim
-      for (uint16_t x = 0; x < wdth-kwdt+2*pad+1; x++) {
-         // Account for padding - skip padded values
-         if (x < pad) { xStart = pad-x; } else { xStart = 0; }
-         if (x > wdth-kwdt+pad) { xEnd = wdth - (x-pad); } else { xEnd = kwdt; }
-         // Move the wieight pointer to the fisrt useful (non-padded) weight block
-         pWgt = pKrn + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-         threshLoc = thresh;
-         signs = sign;
-         // Outer loop - kernels
-         for (uint16_t k = 0; k<knum/pckWdt; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               outTemp = 0;
-               xyCount = 0;
-               // K-Y dim
-               for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                  // Move the input pointer to the first non-padded activation block
-                  pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                  // K-X dim
-                  for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                        xyCount++;
-                        // Z dim
-                        for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                           // popcount
-                           outTemp += popcount(xnorTmp);
-                        } // Z dim
-                  } // K-X dim
-                  // Move the weight poitner to the next row
-                  pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*kdpt - outTemp);
-               // Batch normalize/ binarize
-               outTemp = (bnPrec) outTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
-               // Shift the weight pointer to the next kernel
-               pWgt += yStart*kwdt*kdpt/pckWdt;
-            }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
-         }
-      }
-   }
-   
-   // Bottom 
-   // Move the ouput pointer
-   pRes = pOut + (hght-khgt+pad+1)*(wdth-kwdt+2*pad+1)*knum/pckWdt;
-   // Y dim
-   for (uint16_t y = hght-khgt+pad+1; y < hght-khgt+2*pad+1; y++) {
-      // Account for padding - skip padded values
-      if (y < pad) { yStart = pad-y; } else { yStart = 0; }
-      if (y > hght-khgt+pad) { yEnd = hght - (y-pad); } else { yEnd = khgt; }
-      // X dim
-      for (uint16_t x = 0; x < wdth-kwdt+2*pad+1; x++) {
-         // Account for padding - skip padded values
-         if (x < pad) { xStart = pad-x; } else { xStart = 0; }
-         if (x > wdth-kwdt+pad) { xEnd = wdth - (x-pad); } else { xEnd = kwdt; }
-         // Move the wieight pointer to the fisrt useful (non-padded) weight block
-         pWgt = pKrn + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-         threshLoc = thresh;
-         signs = sign;
-         // Outer loop - kernels
-         for (uint16_t k = 0; k<knum/pckWdt; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               outTemp = 0;
-               xyCount = 0;
-               // K-Y dim
-               for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                  // Move the input pointer to the first non-padded activation block
-                  pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                  // K-X dim
-                  for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                        xyCount++;
-                        // Z dim
-                        for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                           // popcount
-                           // Accumulation
-                           outTemp += popcount(xnorTmp);
-                        } // Z dim
-                  } // K-X dim
-                  // Move the weight poitner to the next row
-                  pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*kdpt - outTemp);
-               // Batch normalize/ binarize
-               outTemp = (bnPrec) outTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
-               // Shift the weight pointer to the next kernel
-               pWgt += (khgt-yEnd+yStart)*kwdt*kdpt/pckWdt;
-            }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
-         }
-      }
-   }
-  
-   // Left 
-   pRes = pOut + pad*(wdth-kwdt+2*pad+1)*knum/pckWdt;
-   // Y dim
-   for (uint16_t y = pad; y < hght-khgt+pad+1; y++) {
-      // Account for padding - skip padded values
-      if (y < pad) { yStart = pad-y; } else { yStart = 0; }
-      if (y > hght-khgt+pad) { yEnd = hght - (y-pad); } else { yEnd = khgt; }
-      // X dim
-      for (uint16_t x = 0; x < pad; x++) {
-         // Account for padding - skip padded values
-         if (x < pad) { xStart = pad-x; } else { xStart = 0; }
-         if (x > wdth-kwdt+pad) { xEnd = wdth - (x-pad); } else { xEnd = kwdt; }
-         // Move the wieight pointer to the fisrt useful (non-padded) weight block
-         pWgt = pKrn + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-         threshLoc = thresh;
-         signs = sign;
-         // Outer loop - kernels
-         for (uint16_t k = 0; k<knum/pckWdt; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               outTemp = 0;
-               xyCount = 0;
-               // K-Y dim
-               for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                  // Move the input pointer to the first non-padded activation block
-                  pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                  // K-X dim
-                  for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                        xyCount++;
-                        // Z dim
-                        for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                           // popcount
-                           // Accumulation
-                           outTemp += popcount(xnorTmp);
-                        } // Z dim
-                  } // K-X dim
-                  // Move the weight poitner to the next row
-                  pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*kdpt - outTemp);
-               // Batch normalize/ binarize
-               outTemp = (bnPrec) outTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
-               // Shift the weight pointer to the next kernel
-               pWgt += (khgt-yEnd+yStart)*kwdt*kdpt/pckWdt;
-            }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
-         }
-      }
-      pRes = pOut + (y+1)*(wdth-kwdt+2*pad+1)*knum/pckWdt;
-   }
+    // Bottom 
+    // Move the ouput pointer
+    pRes = pOut + (hght - khgt + pad + 1) * (wdth - kwdt + 2 * pad + 1) * knum * out_bit / pckWdt;
+    // Y dim
+    for (uint16_t y = hght - khgt + pad + 1; y < hght - khgt + 2 * pad + 1; y++) {
+        // Account for padding - skip padded values
+        if (y < pad) { yStart = pad - y; }
+        else { yStart = 0; }
+        if (y > hght - khgt + pad) { yEnd = hght - (y - pad); }
+        else { yEnd = khgt; }
+        // X dim
+        for (uint16_t x = 0; x < wdth - kwdt + 2 * pad + 1; x++) {
+            // Account for padding - skip padded values
+            if (x < pad) { xStart = pad - x; }
+            else { xStart = 0; }
+            if (x > wdth - kwdt + pad) { xEnd = wdth - (x - pad); }
+            else { xEnd = kwdt; }
+            // Move the wieight pointer to the fisrt useful (non-padded) weight block
+            pWgt = pKrn + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+            threshLoc = thresh;
+            signs = sign;
+            offsets = offset;
+            // Outer loop - kernels
+            for (uint16_t k = 0; k < knum / pckWdt; k++) {
+                // Packed slices
+                memset(pckTemp, 0, sizeof(pckTemp));
+                for (uint16_t ks = 0; ks < pckWdt; ks++) {
 
-   // Right 
-   pRes = pOut + pad*(wdth-kwdt+2*pad+1)*knum/pckWdt + (wdth-kwdt+pad+1)*knum/pckWdt;
-   // Y dim
-   for (uint16_t y = pad; y < hght-khgt+pad+1; y++) {
-      // Account for padding - skip padded values
-      if (y < pad) { yStart = pad-y; } else { yStart = 0; }
-      if (y > hght-khgt+pad) { yEnd = hght - (y-pad); } else { yEnd = khgt; }
-      // X dim
-      for (uint16_t x = wdth-kwdt+pad+1; x < wdth-kwdt+2*pad+1; x++) {
-         // Account for padding - skip padded values
-         if (x < pad) { xStart = pad-x; } else { xStart = 0; }
-         if (x > wdth-kwdt+pad) { xEnd = wdth - (x-pad); } else { xEnd = kwdt; }
-         // Move the wieight pointer to the fisrt useful (non-padded) weight block
-         pWgt = pKrn + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-         threshLoc = thresh;
-         signs = sign;
-         // Outer loop - kernels
-         for (uint16_t k = 0; k<knum/pckWdt; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               outTemp = 0;
-               xyCount = 0;
-               // K-Y dim
-               for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                  // Move the input pointer to the first non-padded activation block
-                  pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                  // K-X dim
-                  for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                        xyCount++;
-                        // Z dim
-                        for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                           // popcount
-                           // Accumulation
-                           outTemp += popcount(xnorTmp);
-                        } // Z dim
-                  } // K-X dim
-                  // Move the weight poitner to the next row
-                  pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-               } // K-Y dim
-               // Adjust the output value
-               outTemp = outTemp - (xyCount*kdpt - outTemp);
-               // Batch normalize/ binarize
-               outTemp = (bnPrec) outTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= outTemp << (pckWdt-1-ks);
-               // Shift the weight pointer to the next kernel
-               pWgt += (khgt-yEnd+yStart)*kwdt*kdpt/pckWdt;
+                    out = 0;
+                    out_acc = 0;
+                    output_bit = 0;
+                    weight_temp = pWgt;
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        outTemp = 0;
+                        xyCount = 0;
+                        pWgt = weight_temp;
+                        // K-Y dim
+                        for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                            // Move the input pointer to the first non-padded activation block
+                            pIn = pAct + (y + ky - pad) * yCoeff + (x + xStart - pad) * xCoeff + bitw;
+                            // K-X dim
+                            for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                xyCount++;
+                                // Z dim
+                                for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                    // XNOR multiplication
+                                    xnorTemp = ~(*pIn ^ *pWgt++);
+                                    outTemp += popcount(xnorTemp);
+                                    pIn += in_bit;
+                                }// Z dim                            
+                            } // K-X dim
+                              // Move the weight poitner to the next row
+                            pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                        } // K-Y dim
+                        outTemp = outTemp - (xyCount * kdpt - outTemp);
+                        // Get the int full precision value 
+                        out = (outTemp << (in_bit - bitw - 1));
+                        // Quantization
+                        int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+                        int temp = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp |= (1 << i);
+                        }
+                        temp = (temp & out) << (16 - in_bit);
+                        out_acc += out_temp + temp;
+                        int up_thresh = 0;
+                        int temp_thresh = 0;
+                        for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                            temp_thresh += ((xyCount * kdpt) << (in_bit - bitt - 1));
+                        }
+                        int temp_fixed = temp_thresh >> (in_bit + 2) << (16);/// pow(2, in_bit);
+                        int temp_pack = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp_pack |= (1 << i);
+                        }
+                        temp_pack = (temp_pack & temp_thresh) << (16 - in_bit);
+                        up_thresh = temp_fixed + temp_pack;
+                        for (uint8_t bito = output_bit; bito != out_bit; bito++) {
+                            if (out_acc > *threshLoc + up_thresh) {
+                                pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                                out_acc += (1 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else if (out_acc < *threshLoc - up_thresh || (bitw == in_bit - 1)) {
+                                pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                                out_acc += (0 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        if (output_bit == out_bit) {
+                            break;
+                        }
+                    }
+                    threshLoc++;
+                    offsets++;
+                    // Shift the weight pointer to the next kernel
+                    pWgt += (khgt - yEnd + yStart) * kwdt * kdpt / pckWdt;
+                }
+                //pckTemp = ~(pckTemp ^ *signs++);
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                    *pRes++ = ~(pckTemp[bitw] ^ (*signs));
+                }
+                signs++;
             }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
-         }
-      }
-      pRes = pOut + (y+1)*(wdth-kwdt+2*pad+1)*knum/pckWdt + (wdth-kwdt+pad+1)*knum/pckWdt;
-   }
+        }
+    }
+
+    // Left 
+    pRes = pOut + pad * (wdth - kwdt + 2 * pad + 1) * knum * out_bit / pckWdt;
+    // Y dim
+    for (uint16_t y = pad; y < hght - khgt + pad + 1; y++) {
+        // Account for padding - skip padded values
+        if (y < pad) { yStart = pad - y; }
+        else { yStart = 0; }
+        if (y > hght - khgt + pad) { yEnd = hght - (y - pad); }
+        else { yEnd = khgt; }
+        // X dim
+        for (uint16_t x = 0; x < pad; x++) {
+            // Account for padding - skip padded values
+            if (x < pad) { xStart = pad - x; }
+            else { xStart = 0; }
+            if (x > wdth - kwdt + pad) { xEnd = wdth - (x - pad); }
+            else { xEnd = kwdt; }
+            // Move the wieight pointer to the fisrt useful (non-padded) weight block
+            pWgt = pKrn + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+            threshLoc = thresh;
+            signs = sign;
+            offsets = offset;
+            // Outer loop - kernels
+            for (uint16_t k = 0; k < knum / pckWdt; k++) {
+                // Packed slices
+                memset(pckTemp, 0, sizeof(pckTemp));
+                for (uint16_t ks = 0; ks < pckWdt; ks++) {
+
+                    out = 0;
+                    out_acc = 0;
+                    output_bit = 0;
+                    weight_temp = pWgt;
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        outTemp = 0;
+                        pWgt = weight_temp;
+                        xyCount = 0;
+                        // K-Y dim
+                        for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                            // Move the input pointer to the first non-padded activation block
+                            pIn = pAct + (y + ky - pad) * yCoeff + (x + xStart - pad) * xCoeff + bitw;
+                            // K-X dim
+                            for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                xyCount++;
+                                // Z dim
+                                for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                    // XNOR multiplication
+                                    xnorTemp = ~(*pIn ^ *pWgt++);
+                                    outTemp += popcount(xnorTemp);
+                                    pIn += in_bit;
+                                }// Z dim
+                            } // K-X dim
+                            // Move the weight poitner to the next row
+                            pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                        } // K-Y dim
+                        outTemp = outTemp - (xyCount * kdpt - outTemp);
+                        // Get the int full precision value 
+                        out = (outTemp << (in_bit - bitw - 1));
+                        // Quantization
+                        int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+                        int temp = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp |= (1 << i);
+                        }
+                        temp = (temp & out) << (16 - in_bit);
+                        out_acc += out_temp + temp;
+                        int up_thresh = 0;
+                        int temp_thresh = 0;
+                        for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                            temp_thresh += ((xyCount * kdpt) << (in_bit - bitt - 1));
+                        }
+                        int temp_fixed = temp_thresh >> (in_bit + 2) << (16);/// pow(2, in_bit);
+                        int temp_pack = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp_pack |= (1 << i);
+                        }
+                        temp_pack = (temp_pack & temp_thresh) << (16 - in_bit);
+                        up_thresh = temp_fixed + temp_pack;
+                        for (uint8_t bito = output_bit; bito != out_bit; bito++) {
+                            if (out_acc > *threshLoc + up_thresh) {
+                                pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                                out_acc += (1 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else if (out_acc < *threshLoc - up_thresh || (bitw == in_bit - 1)) {
+                                pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                                out_acc += (0 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        if (output_bit == out_bit) {
+                            break;
+                        }
+                    }
+                    threshLoc++;
+                    offsets++;
+                    // Shift the weight pointer to the next kernel
+                    pWgt += (khgt - yEnd + yStart) * kwdt * kdpt / pckWdt;
+                }
+                //pckTemp = ~(pckTemp ^ *signs++);
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                    *pRes++ = ~(pckTemp[bitw] ^ (*signs));
+                }
+                signs++;
+            }
+        }
+        pRes = pOut + (y + 1) * (wdth - kwdt + 2 * pad + 1) * knum * out_bit / pckWdt;
+    }
+
+    // Right 
+    pRes = pOut + pad * (wdth - kwdt + 2 * pad + 1) * knum * out_bit / pckWdt + (wdth - kwdt + pad + 1) * knum * out_bit / pckWdt;
+    // Y dim
+    for (uint16_t y = pad; y < hght - khgt + pad + 1; y++) {
+        // Account for padding - skip padded values
+        if (y < pad) { yStart = pad - y; }
+        else { yStart = 0; }
+        if (y > hght - khgt + pad) { yEnd = hght - (y - pad); }
+        else { yEnd = khgt; }
+        // X dim
+        for (uint16_t x = wdth - kwdt + pad + 1; x < wdth - kwdt + 2 * pad + 1; x++) {
+            // Account for padding - skip padded values
+            if (x < pad) { xStart = pad - x; }
+            else { xStart = 0; }
+            if (x > wdth - kwdt + pad) { xEnd = wdth - (x - pad); }
+            else { xEnd = kwdt; }
+            // Move the wieight pointer to the fisrt useful (non-padded) weight block
+            pWgt = pKrn + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+            threshLoc = thresh;
+            signs = sign;
+            offsets = offset;
+            // Outer loop - kernels
+            for (uint16_t k = 0; k < knum / pckWdt; k++) {
+                // Packed slices
+                memset(pckTemp, 0, sizeof(pckTemp));
+                for (uint16_t ks = 0; ks < pckWdt; ks++) {
+
+                    out = 0;
+                    out_acc = 0;
+                    output_bit = 0;
+                    weight_temp = pWgt;
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        outTemp = 0;
+                        pWgt = weight_temp;
+                        xyCount = 0;
+                        // K-Y dim
+                        for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                            // Move the input pointer to the first non-padded activation block
+                            pIn = pAct + (y + ky - pad) * yCoeff + (x + xStart - pad) * xCoeff + bitw;
+                            // K-X dim
+                            for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                xyCount++;
+                                // Z dim
+                                for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                    // XNOR multiplication
+                                    xnorTemp = ~(*pIn ^ *pWgt++);
+                                    outTemp += popcount(xnorTemp);
+                                    pIn += in_bit;
+                                }// Z dim
+                            } // K-X dim
+                              // Move the weight poitner to the next row
+                            pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                        } // K-Y dim
+                        outTemp = outTemp - (xyCount * kdpt - outTemp);
+                        // Get the int full precision value 
+                        out = (outTemp << (in_bit - bitw - 1));
+                        // Quantization
+                        int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+                        int temp = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp |= (1 << i);
+                        }
+                        temp = (temp & out) << (16 - in_bit);
+                        out_acc += out_temp + temp;
+                        int up_thresh = 0;
+                        int temp_thresh = 0;
+                        for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                            temp_thresh += ((xyCount * kdpt) << (in_bit - bitt - 1));
+                        }
+                        int temp_fixed = temp_thresh >> (in_bit + 2) << (16);/// pow(2, in_bit);
+                        int temp_pack = 0;
+                        for (int i = 0; i != in_bit; i++) {
+                            temp_pack |= (1 << i);
+                        }
+                        temp_pack = (temp_pack & temp_thresh) << (16 - in_bit);
+                        up_thresh = temp_fixed + temp_pack;
+                        for (uint8_t bito = output_bit; bito != out_bit; bito++) {
+                            if (out_acc > *threshLoc + up_thresh) {
+                                pckTemp[bito] |= (1 << (pckWdt - ks - 1));
+                                out_acc += (1 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else if (out_acc < *threshLoc - up_thresh || (bitw == in_bit - 1)) {
+                                pckTemp[bito] |= (0 << (pckWdt - ks - 1));
+                                out_acc += (0 ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? ((*offsets) >> (bito + 1)) : -((*offsets) >> (bito + 1)));
+                                output_bit++;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        if (output_bit == out_bit) {
+                            break;
+                        }
+                    }
+                    threshLoc++;
+                    offsets++;
+                    // Shift the weight pointer to the next kernel
+                    pWgt += (khgt - yEnd + yStart) * kwdt * kdpt / pckWdt;
+                }
+                //pckTemp = ~(pckTemp ^ *signs++);
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                    *pRes++ = ~(pckTemp[bitw] ^ (*signs));
+                }
+                signs++;
+            }
+        }
+        pRes = pOut + (y + 1) * (wdth - kwdt + 2 * pad + 1) * knum * out_bit / pckWdt + (wdth - kwdt + pad + 1) * knum * out_bit / pckWdt;
+    }
+    //printf("%d\n", exit_time);
 }
 
-void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad,bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
+void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad,bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
     // Temporary variables
-    pckDtype xnorTmp = 0;
-    int32_t  outTemp = 0;
-    pckDtype pckTemp = 0;
-    uint16_t  yCoeff = wdth * dpth / pckWdt;
-    uint16_t  xCoeff = dpth / pckWdt;
+    pckDtype xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    pckDtype pckTemp[out_bit];
+    int out = 0;
+    uint16_t  yCoeff = wdth * dpth*in_bit / pckWdt;
+    uint16_t  xCoeff = dpth *in_bit/ pckWdt;
     // XY count for padding adjustment
     uint8_t  xyCount = 0;
     // Moving kernel pointer
     pckDtype* pWgt = pKrn;
     pckDtype* pIn = pAct;
     bnDtype* pRes = pOut;
-    uint16_t  cntCoeff = khgt * kwdt * kdpt / 2;
+    uint16_t  cntCoeff = khgt * kwdt * kdpt;
     // Starting indices for padding
     uint16_t  xStart, yStart = 0;
     // Ending indices for padding
@@ -1622,29 +1995,39 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
             //pRes = pOut + (y*(wdth-kwdt+1)+x)*knum/pckWdt;
             for (uint16_t k = 0; k < knum / pckWdt; k++) {
                 // Packed slices
-                pckTemp = 0;
+                memset(pckTemp, 0,sizeof(pckTemp));
                 for (uint16_t ks = 0; ks < pckWdt; ks++) {
                     pIn = pAct + y * yCoeff + x * xCoeff;
-                    outTemp = 0;
+                    memset(outTemp, 0,sizeof(outTemp));
+                    out = 0;
                     // K-Y dim
                     for (uint16_t ky = 0; ky < khgt; ky++) {
                         // K-X dim
                         for (uint16_t kx = 0; kx < kwdt * dpth / pckWdt; kx++) {
-                            // XNOR multiplication
-                            xnorTmp = ~(*pIn++ ^ *pWgt++);
-                            outTemp += popcount(xnorTmp);
+                            for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                // XNOR multiplication
+                                xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+                                outTemp[bitw] += popcount(xnorTemp[bitw]);
+                            }
+                            pWgt++;
                         } // K-X dim
                         // Move the activation pointer one row down
-                        pIn += (wdth - kwdt) * dpth / pckWdt;
+                        pIn += (wdth - kwdt) * dpth *in_bit/ pckWdt;
                     } // K-Y dim
                     // We've only counted ones, but we want a difference between +1s and -1s 
                     // so we need to adjust the result
                     // Below is shorter for
                     // outTemp = outTemp - (2*cntCoeff - outTemp);
                     // outTemp = outTemp >= 0;
-                    outTemp = outTemp - (2 * cntCoeff - outTemp);
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        // Adjust the output value
+                        outTemp[bitw] = outTemp[bitw] - (cntCoeff - outTemp[bitw]);
+                        // Get the int full precision value 
+                        out += (outTemp[bitw] << (in_bit - bitw - 1));
+                    }
                     // Batch normalize/ binarize
-                    *pRes++ = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                    float out_temp = out/ (float)(1 << (in_bit));// pow(2, in_bit);
+                    *pRes++ = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                     // Shift based on current kernel slice
                 }
             }
@@ -1672,9 +2055,10 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
             // Outer loop - kernels
             for (uint16_t k = 0; k < knum / pckWdt; k++) {
                 // Packed slices
-                pckTemp = 0;
+                memset(pckTemp, 0,sizeof(pckTemp));
                 for (uint16_t ks = 0; ks < pckWdt; ks++) {
-                    outTemp = 0;
+                    memset(outTemp, 0,sizeof(outTemp));
+                    out = 0;
                     xyCount = 0;
                     // K-Y dim
                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
@@ -1685,19 +2069,27 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
                             xyCount++;
                             // Z dim
                             for (uint16_t z = 0; z < dpth / pckWdt; z++) {
-                                // XNOR multiplication
-                                xnorTmp = ~(*pIn++ ^ *pWgt++);
-                                // popcount
-                                outTemp += popcount(xnorTmp);
+                                for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                    // XNOR multiplication
+                                    xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+                                    outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                }
+                                pWgt++;
                             } // Z dim
                         } // K-X dim
                         // Move the weight poitner to the next row
                         pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
                     } // K-Y dim
                     // Adjust the output value
-                    outTemp = outTemp - (xyCount * kdpt - outTemp);
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        // Adjust the output value
+                        outTemp[bitw] = outTemp[bitw] - (xyCount * kdpt - outTemp[bitw]);
+                        // Get the int full precision value 
+                        out += (outTemp[bitw] << (in_bit - bitw - 1));
+                    }
                     // Batch normalize/ binarize
-                    *pRes++ = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                    float out_temp = out / (float)(1 << (in_bit));// pow(2, in_bit);
+                    *pRes++ = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                     // Shift the weight pointer to the next kernel
                     pWgt += yStart * kwdt * kdpt / pckWdt;
                 }
@@ -1727,9 +2119,10 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
             // Outer loop - kernels
             for (uint16_t k = 0; k < knum / pckWdt; k++) {
                 // Packed slices
-                pckTemp = 0;
+                memset(pckTemp, 0,sizeof(pckTemp));
                 for (uint16_t ks = 0; ks < pckWdt; ks++) {
-                    outTemp = 0;
+                    memset(outTemp,0,sizeof(outTemp));
+                    out = 0;
                     xyCount = 0;
                     // K-Y dim
                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
@@ -1740,20 +2133,27 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
                             xyCount++;
                             // Z dim
                             for (uint16_t z = 0; z < dpth / pckWdt; z++) {
-                                // XNOR multiplication
-                                xnorTmp = ~(*pIn++ ^ *pWgt++);
-                                // popcount
-                                // Accumulation
-                                outTemp += popcount(xnorTmp);
+                                for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                    // XNOR multiplication
+                                    xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+                                    outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                }
+                                pWgt++;
                             } // Z dim
                         } // K-X dim
                         // Move the weight poitner to the next row
                         pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
                     } // K-Y dim
                     // Adjust the output value
-                    outTemp = outTemp - (xyCount * kdpt - outTemp);
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        // Adjust the output value
+                        outTemp[bitw] = outTemp[bitw] - (xyCount * kdpt - outTemp[bitw]);
+                        // Get the int full precision value 
+                        out += (outTemp[bitw] << (in_bit - bitw - 1));
+                    }
                     // Batch normalize/ binarize
-                    *pRes++ = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                    float out_temp = out / (float)(1 << (in_bit));// pow(2, in_bit);
+                    *pRes++ = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                     // Shift the weight pointer to the next kernel
                     pWgt += (khgt - yEnd + yStart) * kwdt * kdpt / pckWdt;
                 }
@@ -1782,9 +2182,10 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
             // Outer loop - kernels
             for (uint16_t k = 0; k < knum / pckWdt; k++) {
                 // Packed slices
-                pckTemp = 0;
+                memset(pckTemp,0,sizeof(pckTemp));
                 for (uint16_t ks = 0; ks < pckWdt; ks++) {
-                    outTemp = 0;
+                    memset(outTemp, 0,sizeof(outTemp));
+                    out = 0;
                     xyCount = 0;
                     // K-Y dim
                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
@@ -1795,20 +2196,27 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
                             xyCount++;
                             // Z dim
                             for (uint16_t z = 0; z < dpth / pckWdt; z++) {
-                                // XNOR multiplication
-                                xnorTmp = ~(*pIn++ ^ *pWgt++);
-                                // popcount
-                                // Accumulation
-                                outTemp += popcount(xnorTmp);
+                                for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                    // XNOR multiplication
+                                    xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+                                    outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                }
+                                pWgt++;
                             } // Z dim
                         } // K-X dim
                         // Move the weight poitner to the next row
                         pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
                     } // K-Y dim
                     // Adjust the output value
-                    outTemp = outTemp - (xyCount * kdpt - outTemp);
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        // Adjust the output value
+                        outTemp[bitw] = outTemp[bitw] - (xyCount * kdpt - outTemp[bitw]);
+                        // Get the int full precision value 
+                        out += (outTemp[bitw] << (in_bit - bitw - 1));
+                    }
                     // Batch normalize/ binarize
-                    *pRes++ = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                    float out_temp = out / (float)(1 << (in_bit));// pow(2, in_bit);
+                    *pRes++ = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                     // Shift the weight pointer to the next kernel
                     pWgt += (khgt - yEnd + yStart) * kwdt * kdpt / pckWdt;
                 }
@@ -1838,9 +2246,10 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
             // Outer loop - kernels
             for (uint16_t k = 0; k < knum / pckWdt; k++) {
                 // Packed slices
-                pckTemp = 0;
+                memset(pckTemp, 0,sizeof(pckTemp));
                 for (uint16_t ks = 0; ks < pckWdt; ks++) {
-                    outTemp = 0;
+                    memset(outTemp, 0,sizeof(outTemp));
+                    out = 0;
                     xyCount = 0;
                     // K-Y dim
                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
@@ -1851,20 +2260,27 @@ void CnBnPdXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
                             xyCount++;
                             // Z dim
                             for (uint16_t z = 0; z < dpth / pckWdt; z++) {
-                                // XNOR multiplication
-                                xnorTmp = ~(*pIn++ ^ *pWgt++);
-                                // popcount
-                                // Accumulation
-                                outTemp += popcount(xnorTmp);
+                                for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                    // XNOR multiplication
+                                    xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+                                    outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                }
+                                pWgt++;
                             } // Z dim
                         } // K-X dim
                         // Move the weight poitner to the next row
                         pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
                     } // K-Y dim
                     // Adjust the output value
-                    outTemp = outTemp - (xyCount * kdpt - outTemp);
+                    for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                        // Adjust the output value
+                        outTemp[bitw] = outTemp[bitw] - (xyCount * kdpt - outTemp[bitw]);
+                        // Get the int full precision value 
+                        out += (outTemp[bitw] << (in_bit - bitw - 1));
+                    }
                     // Batch normalize/ binarize
-                    *pRes++ = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                    float out_temp = out / (float)(1 << (in_bit));// pow(2, in_bit);
+                    *pRes++ = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                     // Shift the weight pointer to the next kernel
                     pWgt += (khgt - yEnd + yStart) * kwdt * kdpt / pckWdt;
                 }
@@ -2310,22 +2726,25 @@ void CnBnPdXnorNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pKrn, con
  * @param[in] thresh - pointer to batch normalization threshold 
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void CnBnPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype* __restrict pOut, const uint8_t pool, bnDtype* __restrict thresh, pckDtype* sign){
+void CnBnPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype* __restrict pOut, const uint8_t pool, pckDtype* __restrict thresh, pckDtype* sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit){
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
+   pckDtype xnorTemp;
+   int32_t  outTemp;
+   int out = 0;
    // For maxpooling
-   int32_t  maxTemp = 0;
+   int  maxTemp=0;
    //int32_t  *outTemp = malloc(pool*pool*sizeof(int32_t));
-   pckDtype pckTemp = 0;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
+   pckDtype pckTemp[out_bit];
+   uint16_t  yCoeff  = wdth*dpth*in_bit/pckWdt;
+   uint16_t  xCoeff  = dpth*in_bit/pckWdt;
    pckDtype *pWgt = pKrn;
    pckDtype *pIn  = pAct;
    pckDtype *pRes = pOut;
    pckDtype  *signs = sign;
-   bnDtype   *threshLoc = thresh;
+   pckDtype   *threshLoc = thresh;
+   pckDtype* offsets = offset;
+   uint16_t  cntCoeff = khgt * kwdt * kdpt;
 
    // Y dim
    for (uint16_t y = 0; y < (hght-khgt+1)/pool; y++) {
@@ -2334,47 +2753,94 @@ void CnBnPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint
          // Restart kernel bn pointer
          threshLoc = thresh;
          signs = sign;
+         offsets = offset;
          // Outer loop - kernels
          for (uint16_t k = 0; k<knum/pckWdt; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp,0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(khgt*kwdt*kdpt);
+               maxTemp = -cntCoeff;
                for (uint16_t yy = 0; yy < pool; yy++) {
-                  for (uint16_t xx = 0; xx < pool; xx++) {
-                     outTemp = 0;
-                     pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt;
-                     pIn = pAct + (y*pool+yy)*yCoeff + (x*pool+xx)*xCoeff;
-                     // K-Y dim
-                     for (uint16_t ky = 0; ky < khgt; ky++) {
-                        // K-X dim
-                        for (uint16_t kx = 0; kx < kwdt; kx++) {
-                           // Z dim
-                           for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                              // XNOR multiplication
-                              xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                              // popcount
-                              // Accumulation
-                              outTemp += popcount(xnorTmp);
-                           } // Z dim
-                        } // K-X dim
-                        pIn += (wdth-kwdt)*dpth/pckWdt;
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (khgt*kwdt*kdpt - outTemp);
+                  for (uint16_t xx = 0; xx < pool; xx++) {                     
+                     out = 0;
+                     for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                         outTemp=0;
+                         pWgt = pKrn + (k * pckWdt + ks) * (khgt * kwdt * kdpt) / pckWdt;
+                         pIn = pAct + (y * pool + yy) * yCoeff + (x * pool + xx) * xCoeff + bitw;
+                         // K-Y dim
+                         for (uint16_t ky = 0; ky < khgt; ky++) {
+                             // K-X dim
+                             for (uint16_t kx = 0; kx < kwdt; kx++) {
+                                 // Z dim
+                                 for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                     // XNOR multiplication
+                                     xnorTemp = ~(*pIn ^ *pWgt++);
+                                     outTemp += popcount(xnorTemp);
+                                     pIn += in_bit;
+                                 }// Z dim
+                             } // K-X dim
+                             pIn += (wdth - kwdt) * dpth * in_bit / pckWdt;
+                         }// K-Y dim
+                         outTemp = outTemp - (cntCoeff - outTemp);
+                         out += (outTemp << (in_bit - bitw - 1));
+                         int temp_thresh = 0;
+                         for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                             temp_thresh += (cntCoeff << (in_bit - bitt - 1));
+                         }
+                         if (out + temp_thresh < maxTemp) {
+                             break;
+                         }
+                     } 
                      // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                     if (out > maxTemp) {
+                         maxTemp = out;
+                         int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+                         int temp = 0;
+                         for (int i = 0; i != in_bit; i++) {
+                             temp |= (1 << i);
+                         }
+                         temp = (temp & maxTemp) << (16 - in_bit);
+                         out_temp += temp;
+                         int exit_condition = 0;
+                         for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                             int temp = out_temp > *threshLoc;
+                             // Shift 
+                             pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                             exit_condition += temp;
+                             //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                             out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+                         }
+                         if (exit_condition == out_bit) {
+                             goto next;
+                         }
+                     }
                   } // X-MP
                } // Y-MP
                // Batch normalize/ binarize
                //goto end;
-               maxTemp = (bnPrec) maxTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+               int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+               int temp = 0;
+               for (int i = 0; i != in_bit; i++) {
+                   temp |= (1 << i);
+               }
+               temp = temp & maxTemp;
+               out_temp += temp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out_temp > *threshLoc;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+               }
+               next: threshLoc++;
+               offsets++;
             }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
+            //pckTemp = ~(pckTemp ^ *signs++);
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = ~(pckTemp[bitw]^(*signs));
+            }
+            signs++;
          }
       }
    }
@@ -2383,16 +2849,17 @@ void CnBnPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint
 void CnBnPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, 
     const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, 
     const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, 
-    const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
+    const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
     // Temporary variables
-    pckDtype xnorTmp = 0;
-    int32_t  outTemp = 0;
+    pckDtype xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
     // For maxpooling
     int32_t  maxTemp = 0;
+    int out = 0;
     //int32_t  *outTemp = malloc(pool*pool*sizeof(int32_t));
-    pckDtype pckTemp = 0;
-    uint16_t  yCoeff = wdth * dpth / pckWdt;
-    uint16_t  xCoeff = dpth / pckWdt;
+    pckDtype pckTemp[out_bit];
+    uint16_t  yCoeff = wdth * dpth *in_bit/ pckWdt;
+    uint16_t  xCoeff = dpth *in_bit/ pckWdt;
     pckDtype* pWgt = pKrn;
     pckDtype* pIn = pAct;
     bnDtype* pRes = pOut;
@@ -2404,13 +2871,14 @@ void CnBnPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
             // Outer loop - kernels
             for (uint16_t k = 0; k < knum / pckWdt; k++) {
                 // Packed slices
-                pckTemp = 0;
+                memset(pckTemp,0,sizeof(pckTemp));
                 for (uint16_t ks = 0; ks < pckWdt; ks++) {
                     // Mpool patches
                     maxTemp = -(khgt * kwdt * kdpt);
                     for (uint16_t yy = 0; yy < pool; yy++) {
                         for (uint16_t xx = 0; xx < pool; xx++) {
-                            outTemp = 0;
+                            memset(outTemp,0,sizeof(outTemp));
+                            out = 0;
                             pWgt = pKrn + (k * pckWdt + ks) * (khgt * kwdt * kdpt) / pckWdt;
                             pIn = pAct + (y * pool + yy) * yCoeff + (x * pool + xx) * xCoeff;
                             // K-Y dim
@@ -2419,24 +2887,31 @@ void CnBnPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
                                 for (uint16_t kx = 0; kx < kwdt; kx++) {
                                     // Z dim
                                     for (uint16_t z = 0; z < dpth / pckWdt; z++) {
-                                        // XNOR multiplication
-                                        xnorTmp = ~(*pIn++ ^ *pWgt++);
-                                        // popcount
-                                        // Accumulation
-                                        outTemp += popcount(xnorTmp);
+                                        for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                            // XNOR multiplication
+                                            xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+                                            outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                        }
+                                        pWgt++;
                                     } // Z dim
                                 } // K-X dim
-                                pIn += (wdth - kwdt) * dpth / pckWdt;
+                                pIn += (wdth - kwdt) * dpth *in_bit/ pckWdt;
                             } // K-Y dim
                             // Adjust the output value
-                            outTemp = outTemp - (khgt * kwdt * kdpt - outTemp);
+                            for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                // Adjust the output value
+                                outTemp[bitw] = outTemp[bitw] - (khgt * kwdt * kdpt - outTemp[bitw]);
+                                // Get the int full precision value 
+                                out += (outTemp[bitw] << (in_bit - bitw - 1));
+                            }
                             // Maxpool
-                            if (outTemp > maxTemp) { maxTemp = outTemp; }
+                            if (out > maxTemp) { maxTemp = out; }
                         } // X-MP
                     } // Y-MP
                     // Batch normalize/ binarize
                     //goto end;
-                    *pOut++ = (float)*gamma++ * (((bnPrec)maxTemp - *mean++) / (*var++)) + *beta++;
+                    float out_temp = maxTemp / (float)(1 << (in_bit));// pow(2, in_bit);
+                    *pRes++ = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                 }
             }
         }
@@ -2462,14 +2937,15 @@ void CnBnPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const
  * @param[in] thresh - pointer to batch normalization threshold 
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void CnBnPdPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype* __restrict pOut, const uint8_t pad, const uint8_t pool, bnDtype* __restrict thresh, pckDtype* sign){
+void CnBnPdPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum, pckDtype* __restrict pOut, const uint8_t pad, const uint8_t pool, pckDtype* __restrict thresh, pckDtype* sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit){
 
    // Temporary variables
-   pckDtype xnorTmp = 0;
-   int32_t  outTemp = 0;
-   pckDtype pckTemp = 0;
-   uint16_t  yCoeff  = wdth*dpth/pckWdt;
-   uint16_t  xCoeff  = dpth/pckWdt;
+   pckDtype xnorTemp;
+   int32_t  outTemp;
+   pckDtype pckTemp[out_bit];
+   int out = 0;
+   uint16_t  yCoeff  = wdth*dpth*in_bit/pckWdt;
+   uint16_t  xCoeff  = dpth*in_bit/pckWdt;
    uint16_t  kCoeff  = khgt*kwdt*kdpt/pckWdt;
    uint16_t  kyCoeff = kwdt*kdpt/pckWdt;
    uint16_t  kxCoeff = kdpt/pckWdt;
@@ -2480,22 +2956,153 @@ void CnBnPdPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const ui
    pckDtype *pIn  = pAct;
    pckDtype *pRes = pOut;
    pckDtype  *signs = sign;
-   bnDtype   *threshLoc = thresh;
+   pckDtype   *threshLoc = thresh;
+   pckDtype* offsets = offset;
    uint16_t  cntCoeff = khgt*kwdt*kdpt;
    // Starting indices for padding
    uint16_t  xStart, yStart = 0;
    // Ending indices for padding
    uint16_t  xEnd, yEnd = 0;
    // For maxpooling
-   int32_t  maxTemp = 0;
+   int  maxTemp = 0;
    int16_t  oHgt = (hght-khgt+2*pad+1)/pool;
    int16_t  oWdt = (wdth-kwdt+2*pad+1)/pool;
    int16_t  knCoeff = knum/pckWdt;
-   int16_t  pInStrd = (wdth-kwdt)*kxCoeff;
-
+   int16_t  pInStrd = (wdth-kwdt)*kxCoeff*in_bit;
+   //int one = 0;
+   //int two = 0;
+   //int one_time = 0;
+   //int two_time = 0;
    // Divide the input into 5 regions - top, bottom, left, right, middle 
    // Middle has no padding
-
+   //// Top
+   pRes = pOut;
+   // Y dim
+   // We need to make sure there's enough lines to do pooling
+   //for (uint16_t y = 0; y < pad; y++) {
+   for (uint16_t y = 0; y < (pad + pool - 1) / pool; y++) {
+       // X dim
+       for (uint16_t x = 0; x < oWdt; x++) {
+           // Restart kernel bn pointer
+           threshLoc = thresh;
+           signs = sign;
+           offsets = offset;
+           // Outer loop - kernels
+           for (uint16_t k = 0; k < knCoeff; k++) {
+               // Packed slices
+               memset(pckTemp, 0, sizeof(pckTemp));
+               for (uint16_t ks = 0; ks < pckWdt; ks++) {
+                   // Mpool patches
+                   maxTemp = INT_MIN;   
+                   for (uint16_t yy = 0; yy < pool; yy++) {
+                       // Account for padding - skip padded values
+                       if ((y * pool + yy) < pad) { yStart = pad - (y * pool + yy); }
+                       else { yStart = 0; }
+                       if ((y * pool + yy) > hght - khgt + pad) { yEnd = hght - ((y * pool + yy) - pad); }
+                       else { yEnd = khgt; }
+                       for (uint16_t xx = 0; xx < pool; xx++) {
+                           // Account for padding - skip padded values
+                           if ((x * pool + xx) < pad) { xStart = pad - (x * pool + xx); }
+                           else { xStart = 0; }
+                           if ((x * pool + xx) > wdth - kwdt + pad) { xEnd = wdth - ((x * pool + xx) - pad); }
+                           else { xEnd = kwdt; }
+                           out = 0;
+                           for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                               outTemp = 0;
+                               // Move the wieight pointer to the fisrt useful (non-padded) weight block
+                               //pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt;
+                               pWgt = pKrn + (k * pckWdt + ks) * kCoeff + yStart * kyCoeff + xStart * kxCoeff;
+                               xyCount = 0;
+                               // K-Y dim
+                               for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                                   // Move the input pointer to the first non-padded activation block
+                                   pIn = pAct + ((y * pool + yy) + ky - pad) * yCoeff + ((x * pool + xx) + xStart - pad) * xCoeff + bitw;
+                                   // K-X dim
+                                   for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                       xyCount++;
+                                       // Z dim
+                                       for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                           // XNOR multiplication
+                                           xnorTemp = ~(*pIn ^ *pWgt++);
+                                           outTemp += popcount(xnorTemp);
+                                           pIn += in_bit;
+                                       }// Z dim
+                                   } // K-X dim
+                                   // Move the weight poitner to the next row
+                                   pWgt += (kwdt - xEnd + xStart) * kxCoeff;
+                               }// K-Y dim
+                               outTemp = outTemp - (xyCount * kdpt - outTemp);
+                               out += (outTemp << (in_bit - bitw - 1));
+                               int temp_thresh = 0;
+                               for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                                   temp_thresh += ((xyCount * kdpt) << (in_bit - bitt - 1));
+                               }
+                               if (out + temp_thresh < maxTemp) {
+                                   //if (bitw < in_bit - 1)exit_time++;
+                                   break;
+                               }
+                           }                           
+                           //printf("%d, ",outTemp);
+                           // Maxpool
+                           if (out > maxTemp) { 
+                               //two++;
+                               maxTemp = out; 
+                               int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+                               int temp = 0;
+                               for (int i = 0; i != in_bit; i++) {
+                                   temp |= (1 << i);
+                               }
+                               temp = (temp & maxTemp) << (16 - in_bit);
+                               out_temp += temp;
+                               int exit_condition = 0;
+                               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                                   int temp = out_temp > *threshLoc;
+                                   // Shift 
+                                   if (temp == 1) {
+                                        exit_condition++;
+                                        pckTemp[bitw] |= (1 << (pckWdt - ks - 1));
+                                        //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                                        out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+                                   }
+                                   else {
+                                       break;
+                                   }
+                               }
+                               if (exit_condition == out_bit) {
+                                   //two_time += ((pool * pool - xx - yy * pool - 1) * in_bit != 0);
+                                   //printf("et pooling top: window wise skip: %d, y: %d, x: %d, k: %d, ks: %d\n", (pool * pool - xx - yy * pool - 1)*in_bit, y, x, k, ks);
+                                   goto next_middle;
+                               }
+                           }
+                       }
+                   }
+                   // Binarize
+                   int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+                   int temp = 0;
+                   for (int i = 0; i != in_bit; i++) {
+                       temp |= (1 << i);
+                   }
+                   temp = (temp & maxTemp) << (16 - in_bit);
+                   out_temp += temp;
+                   for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                       int temp = out_temp > *threshLoc;
+                       // Shift 
+                       pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                       //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                       out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+                   }
+                   next_middle: threshLoc++;
+                   offsets++;
+                   // Shift the weight pointer to the next kernel
+               }
+               //pckTemp = ~(pckTemp ^ *signs++);
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   *pRes++ = ~(pckTemp[bitw]^(*signs));
+               }
+               signs++;
+           }
+       }
+   }
    // Middle - no padding
    // Y dim
    for (uint16_t y = ((pad+pool-1)/pool); y <= oHgt - 2*((pad+pool-1)/pool); y++) {
@@ -2505,128 +3112,121 @@ void CnBnPdPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const ui
       // First n padded rows pad*(hght-khgt+2*pad+1)*knum/pckWdt
       // Already completed rows y*(hght-khgt+2*pad+1)*knum/pckWdt
       // Offset to this row pad*knum/pckWdt
-      pRes = pOut + y*oHgt*knCoeff + ((pad+pool-1)/pool)*knCoeff;
+      pRes = pOut + y*oHgt*knCoeff*out_bit + ((pad+pool-1)/pool)*knCoeff*out_bit;
       //printf("%d %d %d\n", pOut, pRes, (y)*((hght-khgt+2*pad+1)/pool)*knum/pckWdt + ((pad+pool-1)/pool)*knum/pckWdt);
       for (uint16_t x = ((pad+pool-1)/pool); x <= oWdt - 2*((pad+pool-1)/pool); x++) {
          // Restart kernel bn pointer
          threshLoc = thresh;
          signs = sign;
+         offsets = offset;
          //printf("X: %d\n", x);
          // Outer loop - kernels
          pWgt = pKrn;   
          //pRes = pOut + (y*(wdth-kwdt+1)+x)*knum/pckWdt;
          for (uint16_t k = 0; k<knCoeff; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp, 0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -cntCoeff;
+               maxTemp = INT_MIN;
                for (uint16_t yy = 0; yy < pool; yy++) {
-                  for (uint16_t xx = 0; xx < pool; xx++) {
-                     pIn = pAct + (y*pool+yy - pad)*yCoeff + (x*pool+xx- pad)*xCoeff;
-                     pWgt = pKrn + (k*pckWdt + ks)*kCoeff;
-                     outTemp = 0;
-                     // K-Y dim
-                     for (uint16_t ky = 0; ky < khgt; ky++) {
-                        // K-X dim
-                        for (uint16_t kx = 0; kx < kyCoeff; kx++) {
-                           // XNOR multiplication
-                           xnorTmp = ~ ( *pIn++ ^ *pWgt++ ); 
-                           outTemp += popcount(xnorTmp);
-                        } // K-X dim
-                        // Move the activation pointer one row down
-                        pIn += pInStrd;
-                     } // K-Y dim
-                     outTemp = 2*outTemp - cntCoeff;
-                     //printf("OT: %d\n", outTemp);
-                     // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
-                     // Shift based on current kernel slice
-                  } // X-MP
+                   for (uint16_t xx = 0; xx < pool; xx++) {
+                       out = 0;
+                       for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                           outTemp = 0;
+                           pIn = pAct + (y * pool + yy - pad) * yCoeff + (x * pool + xx - pad) * xCoeff + bitw;
+                           pWgt = pKrn + (k * pckWdt + ks) * kCoeff;
+                           // K-Y dim
+                           for (uint16_t ky = 0; ky < khgt; ky++) {
+                               // K-X dim
+                               for (uint16_t kx = 0; kx < kyCoeff; kx++) {
+                                   // XNOR multiplication
+                                   xnorTemp = ~(*pIn ^ *pWgt++);
+                                   outTemp += popcount(xnorTemp);
+                                   pIn += in_bit;
+                               }// K-X dim
+                                // Move the activation pointer one row down
+                               pIn += pInStrd;
+                           } // K-Y dim
+                           //one++;
+                           outTemp = outTemp - (cntCoeff - outTemp);
+                           out += (outTemp << (in_bit - bitw - 1));
+                           int temp_thresh = 0;
+                           for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                               temp_thresh += (cntCoeff << (in_bit - bitt - 1));
+                           }
+                           if (out + temp_thresh < maxTemp) {
+                               //if (bitw < in_bit - 1)exit_time++;
+                               break;
+                           }
+                       }
+                       //printf("OT: %d\n", outTemp);
+                       // Maxpool
+                       if (out > maxTemp) {
+                           //two++;
+                           maxTemp = out;
+                           int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+                           int temp = 0;
+                           for (int i = 0; i != in_bit; i++) {
+                               temp |= (1 << i);
+                           }
+                           temp = (temp & maxTemp) << (16 - in_bit);
+                           out_temp += temp;
+                           int exit_condition = 0;
+                           for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                               int temp = out_temp > *threshLoc;
+                               // Shift 
+                               if (temp == 1) {
+                                   exit_condition++;
+                                   pckTemp[bitw] |= (1 << (pckWdt - ks - 1));
+                                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+                               }
+                               else {
+                                   break;
+                               }
+                           }
+                           if (exit_condition == out_bit) {
+                               //two_time += ((pool * pool - xx - yy * pool - 1) * in_bit != 0);
+                               //printf("et pooling middle: window wise skip: %d, y: %d, x: %d, k: %d, ks: %d\n", (pool* pool - xx - yy * pool - 1)* in_bit, y, x, k, ks);
+                               goto next_top;
+                           }
+                       }
+                       // Shift based on current kernel slice
+                   } // X-MP
                } // Y-MP
                // Binarize
-               maxTemp = (bnPrec) maxTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+               int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+               int temp = 0;
+               for (int i = 0; i != in_bit; i++) {
+                   temp |= (1 << i);
+               }
+               temp = (temp & maxTemp) << (16 - in_bit);
+               out_temp += temp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out_temp > *threshLoc;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+               }
+               // Batch normalize/ binarize
+               next_top: threshLoc++;
+               offsets++;
             }
             //printf("%d\n", pRes);
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
-         }
-      }
-   }
-
-   //// Top
-   pRes = pOut;
-   // Y dim
-   // We need to make sure there's enough lines to do pooling
-   //for (uint16_t y = 0; y < pad; y++) {
-   for (uint16_t y = 0; y < (pad+pool-1)/pool; y++) {
-      // X dim
-      for (uint16_t x = 0; x < oWdt; x++) {
-         // Restart kernel bn pointer
-         threshLoc = thresh;
-         signs = sign;
-         // Outer loop - kernels
-         for (uint16_t k = 0; k<knCoeff; k++) {
-            // Packed slices
-            pckTemp = 0;
-            for (uint16_t ks = 0; ks<pckWdt; ks++) {
-               // Mpool patches
-               maxTemp = -(cntCoeff);
-               for (uint16_t yy = 0; yy < pool; yy++) {
-                  // Account for padding - skip padded values
-                  if ((y*pool+yy) < pad) { yStart = pad-(y*pool+yy); } else { yStart = 0; }
-                  if ((y*pool+yy) > hght-khgt+pad) { yEnd = hght - ((y*pool+yy)-pad); } else { yEnd = khgt; }
-                  for (uint16_t xx = 0; xx < pool; xx++) {
-                     // Account for padding - skip padded values
-                     if ((x*pool+xx) < pad) { xStart = pad-(x*pool+xx); } else { xStart = 0; }
-                     if ((x*pool+xx) > wdth-kwdt+pad) { xEnd = wdth - ((x*pool+xx)-pad); } else { xEnd = kwdt; }
-                     outTemp = 0;
-                     // Move the wieight pointer to the fisrt useful (non-padded) weight block
-                     //pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt;
-                     pWgt = pKrn + (k*pckWdt + ks)*kCoeff + yStart*kyCoeff+ xStart*kxCoeff;   
-                     xyCount = 0;
-                     // K-Y dim
-                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                        // Move the input pointer to the first non-padded activation block
-                        pIn = pAct + ((y*pool+yy)+ky-pad)*yCoeff + ((x*pool+xx)+xStart-pad)*xCoeff;
-                        // K-X dim
-                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                              xyCount++;
-                              // Z dim
-                              for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                                 // XNOR multiplication
-                                 xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                                 // popcount
-                                 outTemp += popcount(xnorTmp);
-                              } // Z dim
-                        } // K-X dim
-                        // Move the weight poitner to the next row
-                        pWgt += (kwdt-xEnd+xStart)*kxCoeff; 
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*kdpt - outTemp);
-                     //printf("%d, ",outTemp);
-                     // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
-                  }
-               }
-               // Binarize
-               maxTemp = (bnPrec) maxTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
-               // Shift the weight pointer to the next kernel
+            //pckTemp = ~(pckTemp ^ *signs++);
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = ~(pckTemp[bitw]^(*signs));
             }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
+            signs++;
          }
       }
    }
    
    // Bottom 
    // Move the ouput pointer
-   pRes = pOut + ((hght-khgt+2*pad)/pool + 1 - ((pad+pool-1)/pool))*((wdth-kwdt+2*pad+1)/pool)*knum/pckWdt;
+   pRes = pOut + ((hght-khgt+2*pad)/pool + 1 - ((pad+pool-1)/pool))*((wdth-kwdt+2*pad+1)/pool)*knum*out_bit/pckWdt;
    // Y dim
    //for (uint16_t y = hght-khgt+((pad+pool-1)/pool)+1; y < hght-khgt+2*((pad+pool-1)/pool)+1; y++) {
    for (uint16_t y = (hght-khgt+2*pad)/pool + 1 - ((pad+pool-1)/pool); y < (hght-khgt+2*pad)/pool + 1; y++) {
@@ -2635,66 +3235,125 @@ void CnBnPdPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const ui
          // Restart kernel bn pointer
          threshLoc = thresh;
          signs = sign;
+         offsets = offset;
          // Outer loop - kernels
          for (uint16_t k = 0; k<knCoeff; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp, 0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(cntCoeff);
+               maxTemp = (INT_MIN);
                for (uint16_t yy = 0; yy < pool; yy++) {
                   // Account for padding - skip padded values
                   if ((y*pool+yy) < pad) { yStart = pad-(y*pool+yy); } else { yStart = 0; }
                   if ((y*pool+yy) > hght-khgt+pad) { yEnd = hght - ((y*pool+yy)-pad); } else { yEnd = khgt; }
                   for (uint16_t xx = 0; xx < pool; xx++) {
-                     // Account for padding - skip padded values
-                     if ((x*pool+xx) < pad) { xStart = pad-(x*pool+xx); } else { xStart = 0; }
-                     if ((x*pool+xx) > wdth-kwdt+pad) { xEnd = wdth - ((x*pool+xx)-pad); } else { xEnd = kwdt; }
-                     // Move the wieight pointer to the fisrt useful (non-padded) weight block
-                     //pWgt = pKrn + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-                     pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-                     outTemp = 0;
-                     xyCount = 0;
-                     //printf("%d %d %d %d %d %d %d %d\n", y, yy, x, xx, yStart, yEnd, xStart, xEnd);
-                     // K-Y dim
-                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                        // Move the input pointer to the first non-padded activation block
-                        //pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                        pIn = pAct + ((y*pool+yy)+ky-pad)*yCoeff + ((x*pool+xx)+xStart-pad)*xCoeff;
-                        // K-X dim
-                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                              xyCount++;
-                              // Z dim
-                              for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                                 // XNOR multiplication
-                                 xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                                 // popcount
-                                 // Accumulation
-                                 outTemp += popcount(xnorTmp);
-                              } // Z dim
-                        } // K-X dim
-                        // Move the weight poitner to the next row
-                        pWgt += (kwdt-xEnd+xStart)*kdpt/pckWdt; 
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*kdpt - outTemp);
-                     // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                      // Account for padding - skip padded values
+                      if ((x * pool + xx) < pad) { xStart = pad - (x * pool + xx); }
+                      else { xStart = 0; }
+                      if ((x * pool + xx) > wdth - kwdt + pad) { xEnd = wdth - ((x * pool + xx) - pad); }
+                      else { xEnd = kwdt; }
+                      // Move the wieight pointer to the fisrt useful (non-padded) weight block
+                      //pWgt = pKrn + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;                       
+                      out = 0;
+                      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                          outTemp = 0;
+                          pWgt = pKrn + (k * pckWdt + ks) * (khgt * kwdt * kdpt) / pckWdt + yStart * kwdt * kdpt / pckWdt + xStart * kdpt / pckWdt;
+                          xyCount = 0;
+                          //printf("%d %d %d %d %d %d %d %d\n", y, yy, x, xx, yStart, yEnd, xStart, xEnd);
+                          // K-Y dim
+                          for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                              // Move the input pointer to the first non-padded activation block
+                              //pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
+                              pIn = pAct + ((y * pool + yy) + ky - pad) * yCoeff + ((x * pool + xx) + xStart - pad) * xCoeff + bitw;
+                              // K-X dim
+                              for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                  xyCount++;
+                                  // Z dim
+                                  for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                      // XNOR multiplication
+                                      xnorTemp = ~(*pIn ^ *pWgt++);
+                                      outTemp += popcount(xnorTemp);
+                                      pIn += in_bit;
+                                  }// Z dim
+                              } // K-X dim
+                             // Move the weight poitner to the next row
+                              pWgt += (kwdt - xEnd + xStart) * kdpt / pckWdt;
+                          } // K-Y dim
+                          //one++;
+                          outTemp = outTemp - (xyCount * kdpt - outTemp);
+                          out += (outTemp << (in_bit - bitw - 1));
+                          int temp_thresh = 0;
+                          for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                              temp_thresh += ((xyCount * kdpt) << (in_bit - bitt - 1));
+                          }
+                          if (out + temp_thresh < maxTemp) {
+                              //if (bitw < in_bit - 1)exit_time++;
+                              break;
+                          }
+                      }
+                      // Maxpool
+                      if (out > maxTemp) {
+                          //two++;
+                          maxTemp = out;
+                          int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+                          int temp = 0;
+                          for (int i = 0; i != in_bit; i++) {
+                              temp |= (1 << i);
+                          }
+                          temp = (temp & maxTemp) << (16 - in_bit);
+                          out_temp += temp;
+                          int exit_condition = 0;
+                          for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                              int temp = out_temp > *threshLoc;
+                              // Shift 
+                              if (temp == 1) {
+                                  exit_condition++;
+                                  pckTemp[bitw] |= (1 << (pckWdt - ks - 1));
+                                  //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                                  out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+                              }
+                              else {
+                                  break;
+                              }
+                          }
+                          if (exit_condition == out_bit) {
+                              //two_time += ((pool * pool - xx - yy * pool - 1) * in_bit != 0);
+                              //printf("et pooling bottom: window wise skip: %d, y: %d, x: %d, k: %d, ks: %d\n", (pool* pool - xx - yy * pool - 1)* in_bit, y, x, k, ks);
+                              goto next_bot;
+                          }
+                      }
                   }
                }
                // Binarize
-               maxTemp = (bnPrec) maxTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+               int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+               int temp = 0;
+               for (int i = 0; i != in_bit; i++) {
+                   temp |= (1 << i);
+               }
+               temp = (temp & maxTemp) << (16 - in_bit);
+               out_temp += temp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out_temp > *threshLoc;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+               }
+               next_bot: threshLoc++;
+               offsets++;
             }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
+            //pckTemp = ~(pckTemp ^ *signs++);
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = ~(pckTemp[bitw]^(*signs));
+            }
+            signs++;
          }
       }
    }
   
    //// Left 
-   pRes = pOut + ((pad+pool-1)/pool)*(oWdt)*knCoeff;
+   pRes = pOut + ((pad+pool-1)/pool)*(oWdt)*out_bit*knCoeff;
    // Y dim
    for (uint16_t y = ((pad+pool-1)/pool); y <= oHgt - 2*((pad+pool-1)/pool); y++) {
       // X dim
@@ -2702,65 +3361,125 @@ void CnBnPdPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const ui
          // Restart kernel bn pointer
          threshLoc = thresh;
          signs = sign;
+         offsets = offset;
          // Outer loop - kernels
          for (uint16_t k = 0; k<knCoeff; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp, 0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(cntCoeff);
+               maxTemp = (INT_MIN);
                for (uint16_t yy = 0; yy < pool; yy++) {
                   // Account for padding - skip padded values
                   if ((y*pool+yy) < pad) { yStart = pad-(y*pool+yy); } else { yStart = 0; }
                   if ((y*pool+yy) > hght-khgt+pad) { yEnd = hght - ((y*pool+yy)-pad); } else { yEnd = khgt; }
                   for (uint16_t xx = 0; xx < pool; xx++) {
-                     // Account for padding - skip padded values
-                     if ((x*pool+xx) < pad) { xStart = pad-(x*pool+xx); } else { xStart = 0; }
-                     if ((x*pool+xx) > wdth-kwdt+pad) { xEnd = wdth - ((x*pool+xx)-pad); } else { xEnd = kwdt; }
-                     outTemp = 0;
-                     xyCount = 0;
-                     // Move the wieight pointer to the fisrt useful (non-padded) weight block
-                     //pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt;
-                     pWgt = pKrn + (k*pckWdt + ks)*kCoeff + yStart*kyCoeff + xStart*kxCoeff;   
-                     // K-Y dim
-                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                        // Move the input pointer to the first non-padded activation block
-                        pIn = pAct + ((y*pool+yy)+ky-pad)*yCoeff + ((x*pool+xx)+xStart-pad)*xCoeff;
-                        // K-X dim
-                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                              xyCount++;
-                              // Z dim
-                              for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                                 // XNOR multiplication
-                                 xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                                 // popcount
-                                 // Accumulation
-                                 outTemp += popcount(xnorTmp);
-                              } // Z dim
-                        } // K-X dim
-                        // Move the weight poitner to the next row
-                        pWgt += (kwdt-xEnd+xStart)*kxCoeff; 
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*kdpt - outTemp);
-                     // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                      // Account for padding - skip padded values
+                      if ((x * pool + xx) < pad) { xStart = pad - (x * pool + xx); }
+                      else { xStart = 0; }
+                      if ((x * pool + xx) > wdth - kwdt + pad) { xEnd = wdth - ((x * pool + xx) - pad); }
+                      else { xEnd = kwdt; }
+
+                      out = 0;
+                      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                          outTemp = 0;
+                          xyCount = 0;
+                          // Move the wieight pointer to the fisrt useful (non-padded) weight block
+                          //pWgt = pKrn + (k*pckWdt + ks)*(khgt*kwdt*kdpt)/pckWdt;
+                          pWgt = pKrn + (k * pckWdt + ks) * kCoeff + yStart * kyCoeff + xStart * kxCoeff;
+                          // K-Y dim
+                          for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                              // Move the input pointer to the first non-padded activation block
+                              pIn = pAct + ((y * pool + yy) + ky - pad) * yCoeff + ((x * pool + xx) + xStart - pad) * xCoeff + bitw;
+                              // K-X dim
+                              for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                  xyCount++;
+                                  // Z dim
+                                  for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+                                      // XNOR multiplication
+                                      xnorTemp = ~(*pIn ^ *pWgt++);
+                                      outTemp += popcount(xnorTemp);
+                                      pIn += in_bit;
+                                  }// Z dim
+                              } // K-X dim
+                              // Move the weight poitner to the next row
+                              pWgt += (kwdt - xEnd + xStart) * kxCoeff;
+                          } // K-Y dim
+                          //one++;
+                          outTemp = outTemp - (xyCount * kdpt - outTemp);
+                          out += (outTemp << (in_bit - bitw - 1));
+                          int temp_thresh = 0;
+                          for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                              temp_thresh += ((xyCount * kdpt) << (in_bit - bitt - 1));
+                          }
+                          if (out + temp_thresh < maxTemp) {
+                              //if (bitw < in_bit - 1)exit_time++;
+                              break;
+                          }
+                      }
+                      // Maxpool
+                      if (out > maxTemp) {
+                          //two++;
+                          maxTemp = out;
+                          int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+                          int temp = 0;
+                          for (int i = 0; i != in_bit; i++) {
+                              temp |= (1 << i);
+                          }
+                          temp = (temp & maxTemp) << (16 - in_bit);
+                          out_temp += temp;
+                          int exit_condition = 0;
+                          for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                              int temp = out_temp > *threshLoc;
+                              // Shift 
+                              if (temp == 1) {
+                                  exit_condition++;
+                                  pckTemp[bitw] |= (1 << (pckWdt - ks - 1));
+                                  //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                                  out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+                              }
+                              else {
+                                  break;
+                              }
+                          }
+                          if (exit_condition == out_bit) {
+                              //two_time += ((pool * pool - xx - yy * pool - 1) * in_bit != 0);
+                              //printf("et pooling left: window wise skip: %d, y: %d, x: %d, k: %d, ks: %d\n", (pool* pool - xx - yy * pool - 1)* in_bit, y, x, k, ks);
+                              goto next_left;
+                          }
+                      }
                   }
                }
                // Binarize
-               maxTemp = (bnPrec) maxTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+               int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+               int temp = 0;
+               for (int i = 0; i != in_bit; i++) {
+                   temp |= (1 << i);
+               }
+               temp = (temp & maxTemp) << (16 - in_bit);
+               out_temp += temp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out_temp > *threshLoc;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+               }
+               next_left: threshLoc++;
+               offsets++;
             }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
+            //pckTemp = ~(pckTemp ^ *signs++);
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = ~(pckTemp[bitw]^(*signs));
+            }
+            signs++;
          }
       }
-      pRes = pOut + (y+1)*(oWdt)*knum/pckWdt;
+      pRes = pOut + (y+1)*(oWdt)*knum*out_bit/pckWdt;
    }
 
    // Right 
-   pRes = pOut + ((pad+pool-1)/pool)*(oWdt)*knum/pckWdt + ((oWdt) - ((pad+pool-1)/pool))*knum/pckWdt;
+   pRes = pOut + ((pad+pool-1)/pool)*(oWdt)*knum*out_bit/pckWdt + ((oWdt) - ((pad+pool-1)/pool))*knum*out_bit/pckWdt;
    // Y dim
    for (uint16_t y = ((pad+pool-1)/pool); y <= oHgt - 2*((pad+pool-1)/pool); y++) {
       // X dim
@@ -2768,76 +3487,138 @@ void CnBnPdPlXnor(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const ui
       // Restart kernel bn pointer
       threshLoc = thresh;
       signs = sign;
+      offsets = offset;
       //for (uint16_t x = 0; x < (wdth-kwdt+2*pad)/pool +1; x++) {
       //for (uint16_t x = (wdth-kwdt+2*pad+1)/pool; x < wdth-kwdt+2*pad+1; x++) {
          // Outer loop - kernels
          for (uint16_t k = 0; k<knCoeff; k++) {
             // Packed slices
-            pckTemp = 0;
+            memset(pckTemp, 0,sizeof(pckTemp));
             for (uint16_t ks = 0; ks<pckWdt; ks++) {
                // Mpool patches
-               maxTemp = -(cntCoeff);
+               maxTemp = (INT_MIN);
                for (uint16_t yy = 0; yy < pool; yy++) {
                   // Account for padding - skip padded values
                   if ((y*pool+yy) < pad) { yStart = pad-(y*pool+yy); } else { yStart = 0; }
                   if ((y*pool+yy) > hght-khgt+pad) { yEnd = hght - ((y*pool+yy)-pad); } else { yEnd = khgt; }
                   for (uint16_t xx = 0; xx < pool; xx++) {
-                     // Account for padding - skip padded values
-                     if ((x*pool+xx) < pad) { xStart = pad-(x*pool+xx); } else { xStart = 0; }
-                     if ((x*pool+xx) > wdth-kwdt+pad) { xEnd = wdth - ((x*pool+xx)-pad); } else { xEnd = kwdt; }
-                     // Move the wieight pointer to the fisrt useful (non-padded) weight block
-                     //pWgt = pKrn + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;   
-                     pWgt = pKrn + (k*pckWdt + ks)*kCoeff + yStart*kyCoeff + xStart*kxCoeff;   
-                     outTemp = 0;
-                     xyCount = 0;
-                     // K-Y dim
-                     for (uint16_t ky = yStart; ky < yEnd; ky++) {
-                        // Move the input pointer to the first non-padded activation block
-                        //pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
-                        pIn = pAct + ((y*pool+yy)+ky-pad)*yCoeff + ((x*pool+xx)+xStart-pad)*xCoeff;
-                        // K-X dim
-                        for (uint16_t kx = xStart; kx < xEnd; kx++) {
-                           xyCount++;
-                           // Z dim
-                           for (uint16_t z = 0; z < dpth/pckWdt; z++) {
-                              // XNOR multiplication
-                              xnorTmp = ~ ( *pIn++ ^ *pWgt++);
-                              // popcount
-                              // Accumulation
-                              outTemp += popcount(xnorTmp);
-                           } // Z dim
-                        } // K-X dim
-                        // Move the weight poitner to the next row
-                        pWgt += (kwdt-xEnd+xStart)*kxCoeff; 
-                     } // K-Y dim
-                     // Adjust the output value
-                     outTemp = outTemp - (xyCount*kdpt - outTemp);
-                     // Maxpool
-                     if (outTemp > maxTemp) { maxTemp = outTemp;}
+                      // Account for padding - skip padded values
+                      if ((x * pool + xx) < pad) { xStart = pad - (x * pool + xx); }
+                      else { xStart = 0; }
+                      if ((x * pool + xx) > wdth - kwdt + pad) { xEnd = wdth - ((x * pool + xx) - pad); }
+                      else { xEnd = kwdt; }
+                      // Move the wieight pointer to the fisrt useful (non-padded) weight block
+                      //pWgt = pKrn + yStart*kwdt*kdpt/pckWdt + xStart*kdpt/pckWdt;
+                      out = 0;
+                      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                          outTemp = 0;
+                          pWgt = pKrn + (k * pckWdt + ks) * kCoeff + yStart * kyCoeff + xStart * kxCoeff;
+                          xyCount = 0;
+                          // K-Y dim
+                          for (uint16_t ky = yStart; ky < yEnd; ky++) {
+                              // Move the input pointer to the first non-padded activation block
+                              //pIn = pAct + (y+ky-pad)*yCoeff + (x+xStart-pad)*xCoeff;
+                              pIn = pAct + ((y * pool + yy) + ky - pad) * yCoeff + ((x * pool + xx) + xStart - pad) * xCoeff + bitw;
+                              // K-X dim
+                              for (uint16_t kx = xStart; kx < xEnd; kx++) {
+                                  xyCount++;
+                                  // Z dim
+                                  for (uint16_t z = 0; z < dpth / pckWdt; z++) {
+
+                                      // XNOR multiplication
+                                      xnorTemp = ~(*pIn ^ *pWgt++);
+                                      outTemp += popcount(xnorTemp);
+                                      pIn += in_bit;
+                                  }// Z dim
+                              } // K-X dim
+                              // Move the weight poitner to the next row
+                              pWgt += (kwdt - xEnd + xStart) * kxCoeff;
+                          } // K-Y dim
+                          //one++;
+                          outTemp = outTemp - (xyCount * kdpt - outTemp);
+                          out += (outTemp << (in_bit - bitw - 1));
+                          int temp_thresh = 0;
+                          for (uint8_t bitt = bitw + 1; bitt != in_bit; bitt++) {
+                              temp_thresh += ((xyCount * kdpt) << (in_bit - bitt - 1));
+                          }
+                          if (out + temp_thresh < maxTemp) {
+                              //if (bitw < in_bit - 1)exit_time++;
+                              break;
+                          }
+                      }
+                      // Maxpool
+                      if (out > maxTemp) {
+                          //two++;
+                          maxTemp = out;
+                          int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+                          int temp = 0;
+                          for (int i = 0; i != in_bit; i++) {
+                              temp |= (1 << i);
+                          }
+                          temp = (temp & maxTemp) << (16 - in_bit);
+                          out_temp += temp;
+                          int exit_condition = 0;
+                          for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                              int temp = out_temp > *threshLoc;
+                              // Shift 
+                              if (temp == 1) {
+                                  exit_condition++;
+                                  pckTemp[bitw] |= (1 << (pckWdt - ks - 1));
+                                  //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                                  out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+                              }
+                              else {
+                                  break;
+                              }
+                          }
+                          if (exit_condition == out_bit) {
+                              //two_time += ((pool * pool - xx - yy * pool - 1) * in_bit != 0);
+                              //printf("et pooling right: window wise skip: %d, y: %d, x: %d, k: %d, ks: %d\n", (pool* pool - xx - yy * pool - 1)* in_bit, y, x, k, ks);
+                              goto next_right;
+                          }
+                      }
                   }
                }
                // Binarize
-               maxTemp = (bnPrec) maxTemp >= *threshLoc++;
-               // Shift based on current kernel slice
-               pckTemp |= maxTemp << (pckWdt-1-ks);
+               int out_temp = maxTemp >> (in_bit) << (16);/// pow(2, in_bit);
+               int temp = 0;
+               for (int i = 0; i != in_bit; i++) {
+                   temp |= (1 << i);
+               }
+               temp = (temp & maxTemp) << (16 - in_bit);
+               out_temp += temp;
+               for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                   int temp = out_temp > *threshLoc;
+                   // Shift 
+                   pckTemp[bitw] |= (temp << (pckWdt - ks - 1));
+                   //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+                   out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offsets) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+               }
+               next_right: threshLoc++;
+               offsets++;
             }
-            pckTemp = ~(pckTemp ^ *signs++);
-            *pRes++ = pckTemp;
+            //pckTemp = ~(pckTemp ^ *signs++);
+            for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                *pRes++ = ~(pckTemp[bitw]^(*signs));
+            }
+            signs++;
          }
       }
-      pRes = pOut + (y+1)*(oWdt)*knCoeff+ ((oWdt) - ((pad+pool-1)/pool))*knCoeff;
+      pRes = pOut + (y+1)*(oWdt)*knCoeff*out_bit+ ((oWdt) - ((pad+pool-1)/pool))*knCoeff*out_bit;
    }
+   //printf("%d,%d, %d, %d\n", one, one_time,two,two_time);
 }
 
 void CnBnPdPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, const uint16_t dpth, 
     const uint16_t wdth, const uint16_t hght, const uint16_t kdpt, const uint16_t kwdt, 
     const uint16_t khgt, const uint16_t knum, bnDtype* __restrict pOut, const uint8_t pad, 
-    const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta) {
+    const uint8_t pool, bnDtype* __restrict mean, bnDtype* __restrict var, bnDtype* __restrict gamma, bnDtype* __restrict beta, uint8_t in_bit, uint8_t out_bit) {
     // Temporary variables
-    pckDtype xnorTmp = 0;
-    int32_t  outTemp = 0;
-    uint16_t  yCoeff = wdth * dpth / pckWdt;
-    uint16_t  xCoeff = dpth / pckWdt;
+    pckDtype xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    int out = 0;
+    uint16_t  yCoeff = wdth * dpth *in_bit / pckWdt;
+    uint16_t  xCoeff = dpth *in_bit / pckWdt;
     uint16_t  kCoeff = kdpt / pckWdt;
     uint16_t index = 0;
     // XY count for padding adjustment
@@ -2861,14 +3642,10 @@ void CnBnPdPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, con
                 for (uint16_t x = 0; x < ((wdth - kwdt + 2 * pad + 1) / pool); x++) {
                     maxTemp = -(khgt * kwdt * kdpt);
                     // Need to do that because we'll be oring into it 
-                    if (ks == 0) {
-                        pOut[y * ((wdth - kwdt + 2 * pad + 1) / pool) * knum / pckWdt + x * knum / pckWdt + k] = 0;
-                    }
                     for (uint16_t yy = 0; yy < pool; yy++) {
                         for (uint16_t xx = 0; xx < pool; xx++) {
-                            outTemp = 0;
+                            memset(outTemp, 0,sizeof(outTemp));
                             xyCount = 0;
-                            outTemp = 0;
                             pWgt = pKrn + (k * pckWdt + ks) * (khgt * kwdt * kdpt) / pckWdt;
                             pIn = pAct + (y * pool + yy) * yCoeff + (x * pool + xx) * xCoeff;
                             // K-Y dim
@@ -2877,19 +3654,25 @@ void CnBnPdPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, con
                                 for (uint16_t kx = 0; kx < kwdt; kx++) {
                                     // Z dim
                                     for (uint16_t z = 0; z < dpth / pckWdt; z++) {
-                                        // XNOR multiplication
-                                        xnorTmp = ~(*pIn++ ^ *pWgt++);
-                                        // popcount
-                                        // Accumulation
-                                        outTemp += popcount(xnorTmp);
+                                        for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                            // XNOR multiplication
+                                            xnorTemp[bitw] = ~(*pIn++ ^ *pWgt);
+                                            outTemp[bitw] += popcount(xnorTemp[bitw]);
+                                        }
+                                        pWgt++;
                                     } // Z dim
                                 } // K-X dim
-                                pIn += (wdth - kwdt) * dpth / pckWdt;
+                                pIn += (wdth - kwdt) * dpth *in_bit/ pckWdt;
                             } // K-Y dim
                             // Adjust the output value
-                            outTemp = outTemp - (khgt * kwdt * kdpt - outTemp);
+                            for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                                // Adjust the output value
+                                outTemp[bitw] = outTemp[bitw] - (khgt * kwdt * kdpt - outTemp[bitw]);
+                                // Get the int full precision value 
+                                out += (outTemp[bitw] << (in_bit - bitw - 1));
+                            }
                             // Maxpool
-                            if (outTemp > maxTemp) { maxTemp = outTemp; }
+                            if (out > maxTemp) { maxTemp = out; }
                         }
                     }
                     // Binarize
@@ -2898,7 +3681,8 @@ void CnBnPdPlXnorNoBin(pckDtype* __restrict pAct, pckDtype* __restrict pKrn, con
                     //maxTemp = maxTemp << (pckWdt - 1 - ks);
                     // First time writing to a given word, make sure to clear it
                     // Write out
-                    pOut[y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k] = (float)*gamma++ * (((bnPrec)outTemp - *mean++) / (*var++)) + *beta++;
+                    float out_temp = maxTemp / (float)(1 << (in_bit));// pow(2, in_bit);
+                    pOut[y * (wdth - kwdt + 1) * knum / pckWdt + x * knum / pckWdt + k] = (float)*gamma++ * (((bnPrec)out_temp - *mean++) / (*var++)) + *beta++;
                 }
             }
         }

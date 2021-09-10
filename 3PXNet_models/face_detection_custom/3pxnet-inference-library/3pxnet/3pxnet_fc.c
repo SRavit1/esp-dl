@@ -46,7 +46,7 @@
  * @param[in] sign - pointer to the packed batch normalization signs
  * @return 0 - Success, 1 - Failure
  */
-uint8_t Fc3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
+uint8_t Fc3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype* __restrict thresh, pckDtype* __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit){
 
    // Batch Norm present (thresh != NULL)
    if (thresh) {
@@ -71,7 +71,7 @@ uint8_t Fc3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8
 #endif
       // Roll back to default implementation
       else {
-         FcBn3pxnPtr(pAct, pWgt, pInd, numIn, numOut, pOut, thresh, sign);
+         FcBn3pxnPtr(pAct, pWgt, pInd, numIn, numOut, pOut, thresh, sign, offset, in_bit, out_bit);
          return 0;
       }
    }
@@ -98,7 +98,7 @@ uint8_t Fc3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8
 #endif
       // Roll back to default implementation
       else {
-         Fc3pxnPtr(pAct, pWgt, pInd, numIn, numOut, pOut);
+         Fc3pxnPtr(pAct, pWgt, pInd, numIn, numOut, pOut, in_bit, out_bit);
          return 0;
       }
    }
@@ -120,7 +120,7 @@ uint8_t Fc3pxnWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8
  * @param[in] beta - batch norm beta (per output)
  * @return 0 - Success, 1 - Failure
  */
-uint8_t Fc3pxnNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta) {
+uint8_t Fc3pxnNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit) {
 
    // Batch Norm present (mean != NULL)
    if (mean) {
@@ -145,7 +145,7 @@ uint8_t Fc3pxnNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, 
 #endif
       // Roll back to default implementation
       else {
-         FcBn3pxnPtrNoBin(pAct, pWgt, pInd, numIn, numOut, pOut, mean, var, gamma, beta);
+         FcBn3pxnPtrNoBin(pAct, pWgt, pInd, numIn, numOut, pOut, mean, var, gamma, beta, in_bit, out_bit);
          return 0;
       }
    }
@@ -172,7 +172,7 @@ uint8_t Fc3pxnNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, 
 #endif
       // Roll back to default implementation
       else {
-         Fc3pxnPtrNoBin(pAct, pWgt, pInd, numIn, numOut, pOut);
+         Fc3pxnPtrNoBin(pAct, pWgt, pInd, numIn, numOut, pOut, in_bit, out_bit);
          return 0;
       }
    }
@@ -189,44 +189,56 @@ uint8_t Fc3pxnNoBinWrap(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, 
  * @param[in] numOut - length of the output vector
  * @param[out] pOut - pointer to the packed output vector
  */
-void Fc3pxnPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut) {
-
+void Fc3pxnPtr(pckDtype* __restrict pAct, pckDtype* __restrict pWgt, uint8_t* __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype* __restrict pOut, uint8_t in_bit, uint8_t out_bit){
    // Input counter
    uint16_t inCnt = numIn;
    // Output counter
    uint16_t outCnt = numOut;
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
+   uint32_t xnorTmp[in_bit];
+   int32_t  outTemp[in_bit];
    // Packing/shifting  index
    uint8_t packIdx = pckWdt-1;
    // For holding batches of output values 
-   pckDtype pckTemp = 0;
-   
+   pckDtype pckTemp[out_bit];
+   memset(pckTemp, 0, sizeof(int32_t) * out_bit);
+   int out = 0;
    while (outCnt) {
-      outTemp = 0;
+       out = 0;
+       memset(outTemp, 0, sizeof(outTemp));
       inCnt = numIn;
       while (inCnt) {
-         // XNOR multiplication
-         xnorTmp = ~ ((*(pckDtype*)(pAct+*pInd++)) ^ *pWgt++);
-         // popcount/Accumulate
-         outTemp += popcount(xnorTmp);
+          // XNOR multiplication
+          for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+              xnorTmp[bitw] = ~((*(pckDtype*)(pAct + (*pInd)*in_bit+bitw)) ^ *pWgt);
+              xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+              // Accumulation
+              outTemp[bitw] += xnorTmp[bitw];
+          }
+          pInd++;
+          pWgt++;
          // Decrement input counter
          inCnt -= pckWdt;
       }
       // Adjust value
-      outTemp = 2*outTemp - numIn;
-      // Binarize output using sign
-      outTemp = outTemp >= 0;
-      // Shift 
-      outTemp = outTemp << packIdx;
-      // Pack
-      pckTemp |= outTemp;
+      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+          // Adjust the output value
+          outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+          // Get the int full precision value 
+          out += (outTemp[bitw] << (in_bit - bitw - 1));
+      }
+      for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+        int temp = out >= 0;
+        pckTemp[bitw] |= (temp << packIdx);
+        out = (temp == 0 ? out + (1 << (out_bit - bitw - 1)) : out - (1 << (out_bit - bitw - 1)));
+      }
       // Full output block - write out
       if (packIdx == 0) {
-         *pOut++ = pckTemp;
-         pckTemp = 0;
-         packIdx = pckWdt-1;
+          for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+              *pOut++ = pckTemp[bitw];
+          }
+          packIdx = pckWdt - 1;
+         memset(pckTemp, 0, sizeof(int32_t) * out_bit);
       }
       else {
          packIdx--;
@@ -247,38 +259,48 @@ void Fc3pxnPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t *
  * @param[in] numOut - length of the output vector
  * @param[out] pOut - pointer to the packed output vector
  */
-void Fc3pxnArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut) {
+void Fc3pxnArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
 
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // For holding batches of output values 
-   pckDtype pckTemp = 0;
+    uint32_t xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    // For holding batches of output values 
+    pckDtype pckTemp[out_bit];
    // Weight index counter
    uint32_t wgtCnt = 0;
+   int out = 0;
 
    for (uint16_t outCnt = 0; outCnt < numOut/pckWdt; outCnt++) {
-      pckTemp = 0;
+       memset(pckTemp, 0, sizeof(pckTemp));
       for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
-         outTemp = 0;
+          out = 0;
+          memset(outTemp, 0, sizeof(outTemp));
          for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
-            // XNOR multiplication
-            xnorTmp = ~ ( pAct[pInd[wgtCnt]] ^ pWgt[wgtCnt]);
-            // popcount/Accumulate
-            outTemp += popcount(xnorTmp);
-            wgtCnt++;
+             for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                 // XNOR multiplication
+                 xnorTemp[bitw] = ~(pAct[pInd[wgtCnt] * in_bit + bitw] ^ pWgt[wgtCnt]);
+                 // popcount/Accumulate
+                 outTemp[bitw] += popcount(xnorTemp[bitw]);                 
+             }
+             wgtCnt++;
          }
-         // Adjust value
-         outTemp = 2*outTemp - numIn;
+         for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+             // Adjust the output value
+             outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+             // Get the int full precision value 
+             out += (outTemp[bitw] << (in_bit - bitw - 1));
+         }
          // Binarize
-         outTemp = outTemp >= 0;
-         // Shift
-         outTemp = outTemp << (pckWdt-1-packIdx);
-         // Pack
-         pckTemp |= outTemp;
+         for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+             int temp = out > 0;
+             // Shift 
+             pckTemp[bitw] |= (temp << (pckWdt - packIdx - 1));
+             out = (temp == 0 ? out + (1 << (out_bit - bitw - 1)) : out - (1 << (out_bit - bitw - 1)));
+         }
       }
-      // Write output block
-      pOut[outCnt] = pckTemp;
+      for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+          *pOut++ = pckTemp[bitw];
+      }
    }
 }
 
@@ -433,31 +455,40 @@ void Fc3pxnNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t
  * @param[in] numOut - length of the output vector
  * @param[out] pOut - pointer to the packed output vector
  */
-void Fc3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut) {
-
+void Fc3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
    // Input counter
    uint16_t inCnt = numIn;
    // Output counter
    uint16_t outCnt = numOut;
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
+   uint32_t xnorTmp[in_bit];
+   int32_t  outTemp[in_bit];
+   int out = 0;
+   memset(xnorTmp, 0, sizeof(xnorTmp));
    
    while (outCnt) {
-      outTemp = 0;
+       memset(outTemp, 0, sizeof(outTemp));
       inCnt = numIn;
       while (inCnt) {
-         // XNOR multiplication
-         xnorTmp = ~ ((*(pckDtype*)(pAct+*pInd++)) ^ *pWgt++);
-         // popcount/Accumulate
-         outTemp += popcount(xnorTmp);
+          for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+              xnorTmp[bitw] = ~((*(pckDtype*)(pAct + (*pInd) * in_bit + bitw)) ^ *pWgt);
+              xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+              // Accumulation
+              outTemp[bitw] += xnorTmp[bitw];
+          }
+          pInd++;
+          pWgt++;
          // Decrement input counter
          inCnt -= pckWdt;
       }
-      // Adjust
-      outTemp = 2*outTemp - numIn;
-      // Write output out
-      *pOut++ = (float) outTemp; 
+      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+          // Adjust the output value
+          outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+          // Get the int full precision value 
+          out += (outTemp[bitw] << (in_bit - bitw - 1));
+      }
+      // Write output block
+      *pOut++ = (float)out;
       outCnt--;
    }
 	
@@ -474,27 +505,36 @@ void Fc3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint
  * @param[in] numOut - length of the output vector
  * @param[out] pOut - pointer to the packed output vector
  */
-void Fc3pxnArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut) {
+void Fc3pxnArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, uint8_t in_bit, uint8_t out_bit) {
 
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // Weight index counter
-   uint32_t wgtCnt = 0;
+    uint32_t xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    // Weight index counter
+    uint32_t wgtCnt = 0;
+    int16_t out = 0;
 
    for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
-      outTemp = 0;
+       memset(outTemp, 0, sizeof(outTemp));
+       out = 0;
       for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
          // XNOR multiplication
-         xnorTmp = ~ ( pAct[pInd[wgtCnt]] ^ pWgt[wgtCnt]);
-         // popcount/Accumulate
-         outTemp += popcount(xnorTmp);
+          for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+              // XNOR multiplication
+              xnorTemp[bitw] = ~(pAct[pInd[wgtCnt]*in_bit+bitw] ^ pWgt[wgtCnt]);
+              // popcount//Accummulate
+              outTemp[bitw] += popcount(xnorTemp[bitw]);
+          }
          wgtCnt++;
       }
-      // Adjust
-      outTemp = 2*outTemp - numIn;
-      // Write output block
-      pOut[outCnt] = (float) outTemp;
+      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+          // Adjust the output value
+          outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+          // Get the int full precision value 
+          out += (outTemp[bitw] << (in_bit - bitw - 1));
+         
+      }
+      *pOut++ = (float)out;
    }
 
 }
@@ -634,44 +674,66 @@ void Fc3pxnNeonQNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, ui
  * @param[in] sign - pointer to the packed batch normalization signs
  */
 void FcBn3pxnPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, 
-    const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
+    const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype* __restrict thresh, pckDtype* __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
    // Input counter
    uint16_t inCnt = numIn;
    // Output counter
    uint16_t outCnt = numOut;
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
+   uint32_t xnorTmp[in_bit];
+   int32_t  outTemp[in_bit];
+   int32_t pckTemp[out_bit];
+   int out = 0;
    // Packing/shifting  index
    uint8_t packIdx = pckWdt-1;
-   // For holding batches of output values 
-   pckDtype pckTemp = 0;
+   memset(pckTemp, 0, sizeof(int32_t) * out_bit);
    
    while (outCnt) {
-      outTemp = 0;
+       memset(outTemp, 0, in_bit * sizeof(int32_t));
+       out = 0;
       inCnt = numIn;
       while (inCnt) {
-         // XNOR multiplication
-         xnorTmp = ~ ((*(pckDtype*)(pAct+*pInd++)) ^ *pWgt++);
-         // popcount/Accumulation
-         outTemp += popcount(xnorTmp);
-         // Decrement input counter
-         inCnt -= pckWdt;
+          for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+              xnorTmp[bitw] = ~((*(pckDtype*)(pAct + (*pInd) * in_bit + bitw)) ^ *pWgt);
+              xnorTmp[bitw] = popcount(xnorTmp[bitw]);
+              // Accumulation
+              outTemp[bitw] += xnorTmp[bitw];
+          }
+          pInd++;
+          pWgt++;
+          // Decrement input counter
+          inCnt -= pckWdt;
       }
-      // Adjust
-      outTemp = 2*outTemp - numIn;
-      // Batch normalize/ binarize
-      outTemp = (bnPrec) outTemp >= *thresh++;
-      // Shift 
-      outTemp = outTemp << packIdx;
-      // Pack
-      pckTemp |= outTemp;
+      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+          // Adjust the output value
+          outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+          // Get the int full precision value 
+          out += (outTemp[bitw] << (in_bit - bitw - 1));
+      }
+      int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+      int temp = 0;
+      for (int i = 0; i != in_bit; i++) {
+          temp |= (1 << i);
+      }
+      temp = temp & out;
+      out_temp += temp;
+      for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+          int temp = out_temp >= *thresh;
+          // Shift 
+          pckTemp[bitw] |= (temp << (packIdx));
+          //out_temp = (temp ^ (1 & ((*signs) >> (pckWdt - ks - 1))) ? out_temp + *offsets * (1 << (out_bit - bitw - 1)) : out_temp - *offsets * (1 << (out_bit - bitw - 1)));
+          out_temp = (temp ^ (1 & ((*sign) >> (packIdx))) ? out_temp + ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+      }
+      thresh++;
+      offset++;
       // Full output block - write out
       if (packIdx == 0) {
-         pckTemp = ~(pckTemp ^ *sign++);
-         *pOut++ = pckTemp;
-         pckTemp = 0;
+          for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+              *pOut++ = ~(pckTemp[bitw] ^ (*sign));
+          }
+          sign++;
+          memset(pckTemp, 0, sizeof(int32_t) * out_bit);
          packIdx = pckWdt-1;
       }
       else {
@@ -695,39 +757,55 @@ void FcBn3pxnPtr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t
  * @param[in] thresh - pointer to batch normalization threshold (if NULL, Bn is skipped)
  * @param[in] sign - pointer to the packed batch normalization signs
  */
-void FcBn3pxnArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, bnDtype * __restrict thresh, pckDtype * __restrict sign) {
+void FcBn3pxnArr(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, pckDtype * __restrict pOut, pckDtype * __restrict thresh, pckDtype * __restrict sign, pckDtype* __restrict offset, uint8_t in_bit, uint8_t out_bit) {
 
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   // For holding batches of output values 
-   pckDtype pckTemp = 0;
+    uint32_t xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    // For holding batches of output values 
+    pckDtype pckTemp[out_bit];
    // Weight index counter
    uint32_t wgtCnt = 0;
-
+   int out = 0;
    for (uint16_t outCnt = 0; outCnt < numOut/pckWdt; outCnt++) {
-      pckTemp = 0;
+       memset(pckTemp, 0, sizeof(pckTemp));
       for (uint8_t packIdx = 0; packIdx < pckWdt; packIdx++) {
-         outTemp = 0;
+          memset(outTemp, 0, sizeof(outTemp));
+          out = 0;
          for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
-            // XNOR multiplication
-            xnorTmp = ~ ( pAct[pInd[wgtCnt]] ^ pWgt[wgtCnt]);
-            // popcount/Accumulation
-            outTemp += popcount(xnorTmp);
+             for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                 // XNOR multiplication
+                 xnorTemp[bitw] = ~(pAct[pInd[wgtCnt] * in_bit + bitw] ^ pWgt[wgtCnt]);
+                 // popcount//Accummulate
+                 outTemp[bitw] += popcount(xnorTemp[bitw]);
+             }
             wgtCnt++;
          }
-         // Adjust
-         outTemp = 2*outTemp - numIn;
-         // Batch normalize/binarize
-         outTemp = (bnPrec) outTemp >= thresh[outCnt*pckWdt+packIdx];
-         // Shift
-         outTemp = outTemp << (pckWdt-1-packIdx);
-         // Pack
-         pckTemp |= outTemp;
+         for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+             // Adjust the output value
+             outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+             // Get the int full precision value 
+             out += (outTemp[bitw] << (in_bit - bitw - 1));
+         }
+         int out_temp = out >> (in_bit) << (16);/// pow(2, in_bit);
+         int temp = 0;
+         for (int i = 0; i != in_bit; i++) {
+             temp |= (1 << i);
+         }
+         temp = temp & out;
+         out_temp += temp;
+         for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+             int temp = out_temp > *thresh;
+             // Shift 
+             pckTemp[bitw] |= (temp << (packIdx));
+             out_temp = (temp ^ (1 & ((*sign) >> (packIdx))) ? out_temp + ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/ : out_temp - ((*offset) >> (bitw + 1))/* * pow(2, -bitw - 1)*/);
+         }
+         thresh++;
+         offset++;
       }
-      // Write output block
-      pckTemp = ~(pckTemp ^ sign[outCnt]);
-      pOut[outCnt] = pckTemp;
+      for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+          *pOut++ = ~(pckTemp[bitw] ^ sign[outCnt]);
+      }
    }
 }
 
@@ -892,32 +970,42 @@ void FcBn3pxnNeonQ(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8
  * @param[in] gamma - batch norm gamma (per output)
  * @param[in] beta - batch norm beta (per output)
  */
-void FcBn3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta) {
+void FcBn3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta, uint8_t in_bit, uint8_t out_bit) {
 
    // Input counter
    uint16_t inCnt = numIn;
    // Output counter
    uint16_t outCnt = numOut;
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
-   
+   int16_t out = 0;
+   // temporary output value (before binarization)
+   uint32_t xnorTemp[in_bit];
+   int32_t  outTemp[in_bit];
+   memset(xnorTemp, 0, sizeof(xnorTemp));
    while (outCnt) {
-      outTemp = 0;
+       memset(outTemp, 0, sizeof(outTemp));
+       out = 0;
       inCnt = numIn;
       while (inCnt) {
-         // XNOR multiplication
-         xnorTmp = ~ ((*(pckDtype*)(pAct+*pInd++)) ^ *pWgt++);
-         // popcount/Accumulation
-         outTemp += popcount(xnorTmp);
+          for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+              // XNOR multiplication
+              xnorTemp[bitw] = ~((*(pckDtype*)(pAct + (*pInd) * in_bit + bitw)) ^ *pWgt);
+              // popcount//Accummulate
+              outTemp[bitw] += popcount(xnorTemp[bitw]);
+          }
+          pWgt++;
          // Decrement input counter
          inCnt -= pckWdt;
       }
-      // Adjust
-      outTemp = 2*outTemp - numIn;
+      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+          // Adjust the output value
+          outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+          // Get the int full precision value 
+          out += (outTemp[bitw] << (in_bit - bitw - 1));
+      }
       // Batch normalize
       // Write output out
-      *pOut++ = (float) *gamma++ * (((bnPrec) outTemp - *mean++)/(*var++)) + *beta++;
+      *pOut++ = *gamma++ * (((bnPrec)out - *mean++) / (*var++)) + *beta++;
       outCnt--;
    }
 	
@@ -938,28 +1026,34 @@ void FcBn3pxnPtrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, ui
  * @param[in] gamma - batch norm gamma (per output)
  * @param[in] beta - batch norm beta (per output)
  */
-void FcBn3pxnArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta) {
+void FcBn3pxnArrNoBin(pckDtype * __restrict pAct, pckDtype * __restrict pWgt, uint8_t * __restrict pInd, const uint16_t numIn, const uint16_t numOut, float * __restrict pOut, bnDtype * __restrict mean, bnDtype * __restrict var, bnDtype * __restrict gamma, bnDtype * __restrict beta,uint8_t in_bit, uint8_t out_bit) {
 
    // temporary output value (before binarization)
-   uint32_t xnorTmp = 0;
-   int32_t  outTemp = 0;
+    uint32_t xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
    // Weight index counter
    uint32_t wgtCnt = 0;
-
+   int out = 0;
    for (uint16_t outCnt = 0; outCnt < numOut; outCnt++) {
-      outTemp = 0;
+       memset(outTemp, 0, sizeof(outTemp));
+       out = 0;
       for (uint16_t inCnt = 0; inCnt < numIn/pckWdt; inCnt++) {
-         // XNOR multiplication
-         xnorTmp = ~ ( pAct[pInd[wgtCnt]] ^ pWgt[wgtCnt]);
-         // popcount/Accumulation
-         outTemp += popcount(xnorTmp);
+          for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+              // XNOR multiplication
+              xnorTemp[bitw] = ~(pAct[pInd[wgtCnt]* in_bit + bitw] ^ pWgt[wgtCnt]);
+              // popcount//Accummulate
+              outTemp[bitw] += popcount(xnorTemp[bitw]);
+          }
          wgtCnt++;
       }
-      // Adjust
-      outTemp = 2*outTemp - numIn;
       // Batch normalize
-      // Write output bloc
-      pOut[outCnt] = (float) *gamma++ * (((bnPrec) outTemp - *mean++)/(*var++)) + *beta++;
+      for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+          // Adjust the output value
+          outTemp[bitw] = outTemp[bitw] - (numIn - outTemp[bitw]);
+          // Get the int full precision value 
+          out += (outTemp[bitw] << (in_bit - bitw - 1));
+      }
+      *pOut++ = (float)*gamma++ * (((bnPrec)out - *mean++) / (*var++)) + *beta++;
    }
 }
 

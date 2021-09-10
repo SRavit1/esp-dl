@@ -42,7 +42,8 @@ extern "C" {
 #include "arm_neon.h"
 #endif
 #include <stdint.h>
-
+#include <string.h>
+#include <math.h>
 #define c1_32  0x55555555
 #define c2_32  0x33333333
 #define c4_32  0x0F0F0F0F
