@@ -19,18 +19,23 @@ void test(void *arg)
     {
         dl_matrix3d_t* o4_2 = mnist_model(image);
         int idx = 0;
-        fptp_t max = o4_2->item[0];
-        printf("Result:\n");
-        for (int i = 0; i < o4_2->c; i++)
-        {
-            printf("%f\t", o4_2->item[i]);
-            if (max < o4_2->item[i])
+        if (o4_2 != 0) {
+            fptp_t max = o4_2->item[0];
+
+            printf("Result:\n");
+            for (int i = 0; i < o4_2->c; i++)
             {
-                max = o4_2->item[i];
-                idx = i;
+                printf("%f\t", o4_2->item[i]);
+                if (max < o4_2->item[i])
+                {
+                    max = o4_2->item[i];
+                    idx = i;
+                }
             }
+            printf("\nThe number is: %d.\n", idx);
+        } else {
+            printf("\nmnist_model returned 0 result");
         }
-        printf("\nThe number is: %d.\n", idx);
 
 
         vTaskDelay(100);

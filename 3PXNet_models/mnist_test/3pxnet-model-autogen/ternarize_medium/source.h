@@ -24,7 +24,7 @@
 static uint8_t l1_act[] = IMAGES ; 
 static uint8_t   labels[] = LABELS; 
 #define F1I  768
-#define F1NPI  480
+#define F1NPI  384
 #define F1O  128
 static pckDtype l1wght[] = _33 ;
 static uint8_t l1ind[] = _33_indices ;
