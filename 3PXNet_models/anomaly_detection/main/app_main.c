@@ -4,7 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "binarize/source.h"
+#include "ternarized_high/source.h"
 
 void test(void *arg)
 {
