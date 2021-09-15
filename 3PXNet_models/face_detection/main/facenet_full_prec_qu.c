@@ -4,7 +4,7 @@
 #include "fd_forward.h"
 #include "esp_log.h"
 
-#include "printUtils.h"
+//#include "printUtils.h"
 
 static const char *TAG = "app_process";
 
@@ -18,7 +18,7 @@ const int EXP_TODO = 0;
  * @return          Scores for every pixel, and box offset with respect.
  */
 
-mtmn_net_t *pnet_lite_q(dl_matrix3du_t *in, dl_conv_mode mode) {
+mtmn_net_t *pnet_lite_q_custom(dl_matrix3du_t *in, dl_conv_mode mode) {
     ESP_LOGI(TAG, "Custom pnet_lite_q called!");
 
     int64_t time_start = esp_timer_get_time();
@@ -85,7 +85,7 @@ mtmn_net_t *pnet_lite_q(dl_matrix3du_t *in, dl_conv_mode mode) {
  * @param threshold Score threshold to detect human face
  * @return          Scores for every box, and box offset with respect.
  */
-mtmn_net_t *rnet_lite_q_with_score_verify(dl_matrix3du_t *in, float threshold, dl_conv_mode mode) {
+mtmn_net_t *rnet_lite_q_with_score_verify_custom(dl_matrix3du_t *in, float threshold, dl_conv_mode mode) {
     ESP_LOGI(TAG, "Custom rnet_lite_q_with_score_verify called!");
 
     int64_t time_start = esp_timer_get_time();
@@ -177,7 +177,7 @@ mtmn_net_t *rnet_lite_q_with_score_verify(dl_matrix3du_t *in, float threshold, d
  * @param threshold Score threshold to detect human face
  * @return          Scores for every box, box offset, and landmark with respect.
  */
-mtmn_net_t *onet_lite_q_with_score_verify(dl_matrix3du_t *in, float threshold, dl_conv_mode mode) {
+mtmn_net_t *onet_lite_q_with_score_verify_custom(dl_matrix3du_t *in, float threshold, dl_conv_mode mode) {
     ESP_LOGI(TAG, "Custom onet_lite_q_with_score_verify called!");
 
     int64_t time_start = esp_timer_get_time();

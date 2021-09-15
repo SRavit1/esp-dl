@@ -1,5 +1,10 @@
 #pragma once
 #include "dl_lib_matrix3dq.h"
+#include "mtmn.h"
+
+mtmn_net_t *pnet_lite_q_custom(dl_matrix3du_t *in, dl_conv_mode mode);
+mtmn_net_t *rnet_lite_q_with_score_verify_custom(dl_matrix3du_t *in, float threshold, dl_conv_mode mode);
+mtmn_net_t *onet_lite_q_with_score_verify_custom(dl_matrix3du_t *in, float threshold, dl_conv_mode mode);
 
 const static qtp_t pnet_conv2d_kernel1_item_array_q[] = {
 	   1,    1,    0,    2,    2,    3,   -1,    4, 

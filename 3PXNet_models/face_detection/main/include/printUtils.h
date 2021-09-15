@@ -1,4 +1,6 @@
 #pragma once
+#ifndef PRINT_UTILS_GUARD
+#define PRINT_UTILS_GUARD
 
 #include <stdio.h>
 
@@ -33,3 +35,5 @@ void printOutput(mtmn_net_t* out) {
     printMatrix(out->landmark);
     printf("Printing network output END===\n");
 }
+
+#endif
