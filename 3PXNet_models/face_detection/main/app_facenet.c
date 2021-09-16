@@ -27,8 +27,7 @@
 #include "freertos/task.h"
 #include "app_facenet.h"
 #include "sdkconfig.h"
-#include "facenet_full_prec.h"
-#include "facenet_full_prec_qu.h"
+#include "facenet_full_prec_qu.h" // "facenet_full_prec_qu.h"
 
 static const char *TAG = "app_process";
 
@@ -61,7 +60,7 @@ void task_process (void *arg)
     /* 1. Load configuration for detection */
     mtmn_config_t mtmn_config = init_config();
 
-    dl_conv_mode conv_mode = DL_XTENSA_IMPL; //DL_C_IMPL
+    dl_conv_mode conv_mode = DL_C_IMPL; //DL_XTENSA_IMPL
 
     do
     {
@@ -73,7 +72,6 @@ void task_process (void *arg)
         //rnet_lite_f_with_score_verify_custom(rnet_image, 1);
         //rnet_lite_q_with_score_verify_custom(rnet_image, 1, conv_mode);
 
-        ESP_LOGI(TAG, "calling onet_lite_f_with_score_verify_custom");
         dl_matrix3du_t *onet_image = dl_matrix3du_alloc(1, 48, 48, 3);
         //onet_lite_f_with_score_verify_custom(onet_image, 1);
         onet_lite_q_with_score_verify_custom(onet_image, 1, conv_mode);
