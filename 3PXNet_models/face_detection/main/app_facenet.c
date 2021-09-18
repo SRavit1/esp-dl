@@ -27,7 +27,7 @@
 #include "freertos/task.h"
 #include "app_facenet.h"
 #include "sdkconfig.h"
-#include "facenet_full_prec_qu.h" // "facenet_full_prec_qu.h"
+#include "facenet_full_prec.h" // "facenet_full_prec_qu.h"
 
 static const char *TAG = "app_process";
 
@@ -65,7 +65,7 @@ void task_process (void *arg)
     do
     {
         dl_matrix3du_t *pnet_image = dl_matrix3du_alloc(1, 12, 12, 3);
-        //pnet_lite_f_custom(pnet_image);
+        pnet_lite_f_custom(pnet_image);
         //pnet_lite_q_custom(pnet_image, conv_mode);
 
         dl_matrix3du_t *rnet_image = dl_matrix3du_alloc(1, 24, 24, 3);
@@ -74,7 +74,7 @@ void task_process (void *arg)
 
         dl_matrix3du_t *onet_image = dl_matrix3du_alloc(1, 48, 48, 3);
         //onet_lite_f_with_score_verify_custom(onet_image, 1);
-        onet_lite_q_with_score_verify_custom(onet_image, 1, conv_mode);
+        //onet_lite_q_with_score_verify_custom(onet_image, 1, conv_mode);
 
         /*int64_t start_time = esp_timer_get_time();
         // 2. Get one image with camera * /
