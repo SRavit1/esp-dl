@@ -41,7 +41,7 @@
 #include "esp_log.h"
 static const char *TAG = "app_main";
 
-static uint8_t l1_act[] = IMAGES ; 
+static int8_t l1_act[] = IMAGES ; 
 static uint8_t   labels[] = LABELS; 
 #define F1I  640
 #define F1NPI  0
@@ -94,24 +94,33 @@ static pckDtype l9act_bin[F8O/pckWdt];
 static pckDtype l10wght[] = _119 ;
 static pckDtype l10act_bin[F9O/pckWdt]; 
 static float output[10]; 
-static bnDtype bn1thr[] = bn1_thresh ; 
+static pckDtype bn1thr[] = bn1_thresh ; 
 static pckDtype bn1sign[] = bn1_sign ; 
-static bnDtype bn2thr[] = bn2_thresh ; 
+static pckDtype bn1offset[] = bn1_offset ; 
+static pckDtype bn2thr[] = bn2_thresh ; 
 static pckDtype bn2sign[] = bn2_sign ; 
-static bnDtype bn3thr[] = bn3_thresh ; 
+static pckDtype bn2offset[] = bn2_offset ; 
+static pckDtype bn3thr[] = bn3_thresh ; 
 static pckDtype bn3sign[] = bn3_sign ; 
-static bnDtype bn4thr[] = bn4_thresh ; 
+static pckDtype bn3offset[] = bn3_offset ; 
+static pckDtype bn4thr[] = bn4_thresh ; 
 static pckDtype bn4sign[] = bn4_sign ; 
-static bnDtype bn5thr[] = bn5_thresh ; 
+static pckDtype bn4offset[] = bn4_offset ; 
+static pckDtype bn5thr[] = bn5_thresh ; 
 static pckDtype bn5sign[] = bn5_sign ; 
-static bnDtype bn6thr[] = bn6_thresh ; 
+static pckDtype bn5offset[] = bn5_offset ; 
+static pckDtype bn6thr[] = bn6_thresh ; 
 static pckDtype bn6sign[] = bn6_sign ; 
-static bnDtype bn7thr[] = bn7_thresh ; 
+static pckDtype bn6offset[] = bn6_offset ; 
+static pckDtype bn7thr[] = bn7_thresh ; 
 static pckDtype bn7sign[] = bn7_sign ; 
-static bnDtype bn8thr[] = bn8_thresh ; 
+static pckDtype bn7offset[] = bn7_offset ; 
+static pckDtype bn8thr[] = bn8_thresh ; 
 static pckDtype bn8sign[] = bn8_sign ; 
-static bnDtype bn9thr[] = bn9_thresh ; 
+static pckDtype bn8offset[] = bn8_offset ; 
+static pckDtype bn9thr[] = bn9_thresh ; 
 static pckDtype bn9sign[] = bn9_sign ; 
+static pckDtype bn9offset[] = bn9_offset ; 
 static bnDtype bn10mean[] = _batchnorm10_running_mean ; 
 static bnDtype bn10var[] = _batchnorm10_running_var ; 
 static bnDtype bn10gamma[] = _batchnorm10_weight ; 
@@ -119,57 +128,49 @@ static bnDtype bn10beta[] = _batchnorm10_bias ;
 int main(){ 
 	int correct = 0; 
 	for(int img = 0; img < 1; img++) {
-		uint8_t *curr_im = l1_act + img*784*sizeof(uint8_t);
-		packBinThrsArr(curr_im, l1act_bin, F1I, 1);
 		int res;
-		/*
+
+		uint8_t *curr_im = (uint8_t *) (l1_act + img*784*sizeof(uint8_t));
+		//int8_t *curr_im_int8 = (uint8_t *)curr_im;
+		packBinThrsArr(curr_im, l1act_bin, F1I, 1);
 		int64_t start_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l1act_bin, l1wght, F1I, F1O, l2act_bin, bn1thr, bn1sign);
+		res = FcXnorWrap(l1act_bin, l1wght, F1I, F1O, l2act_bin, bn1thr, bn1sign, bn1offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc1 res is 1");
 		int64_t fc1_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l2act_bin, l2wght, F2I, F2O, l3act_bin, bn2thr, bn2sign);
+		res = FcXnorWrap(l2act_bin, l2wght, F2I, F2O, l3act_bin, bn2thr, bn2sign, bn2offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc2 res is 1");
 		int64_t fc2_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l3act_bin, l3wght, F3I, F3O, l4act_bin, bn3thr, bn3sign);
+		/*
+		res = FcXnorWrap(l3act_bin, l3wght, F3I, F3O, l4act_bin, bn3thr, bn3sign, bn3offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
 		int64_t fc3_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn4thr, bn4sign);
+		res = FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn4thr, bn4sign, bn4offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
 		int64_t fc4_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn5thr, bn5sign);
+		res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn5thr, bn5sign, bn5offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc5 res is 1");
 		int64_t fc5_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l6act_bin, l6wght, F6I, F6O, l7act_bin, bn6thr, bn6sign);
+		res = FcXnorWrap(l6act_bin, l6wght, F6I, F6O, l7act_bin, bn6thr, bn6sign, bn6offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc6 res is 1");
 		int64_t fc6_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l7act_bin, l7wght, F7I, F7O, l8act_bin, bn7thr, bn7sign);
+		res = FcXnorWrap(l7act_bin, l7wght, F7I, F7O, l8act_bin, bn7thr, bn7sign, bn7offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc7 res is 1");
 		int64_t fc7_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l8act_bin, l8wght, F8I, F8O, l9act_bin, bn8thr, bn8sign);
+		res = FcXnorWrap(l8act_bin, l8wght, F8I, F8O, l9act_bin, bn8thr, bn8sign, bn8offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc8 res is 1");
-		*/
 		int64_t fc8_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorWrap(l9act_bin, l9wght, F9I, F9O, l10act_bin, bn9thr, bn9sign);
+		res = FcXnorWrap(l9act_bin, l9wght, F9I, F9O, l10act_bin, bn9thr, bn9sign, bn9offset, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc9 res is 1");
 		int64_t fc9_time = esp_timer_get_time();
-		for (int i = 0; i < 1000; i++)
-		res = FcXnorNoBinWrap(l10act_bin, l10wght, F10I, F10O, output, bn10mean, bn10var, bn10gamma, bn10beta);
+		res = FcXnorNoBinWrap(l10act_bin, l10wght, F10I, F10O, output, bn10mean, bn10var, bn10gamma, bn10beta, 1, 1);
 		if (res) ESP_LOGI(TAG, "ERROR: fc10 res is 1");
 		int64_t fc10_time = esp_timer_get_time();
-		
+		*/
+
 		//ESP_LOGI(TAG, "forward pass took %lld microseconds", (fc10_time - start_time));
-		/*
 		ESP_LOGI(TAG, "fc1 took %lld microseconds", (fc1_time - start_time));
 		ESP_LOGI(TAG, "fc2 took %lld microseconds", (fc2_time - fc1_time));
+		/*
 		ESP_LOGI(TAG, "fc3 took %lld microseconds", (fc3_time - fc2_time));
 		ESP_LOGI(TAG, "fc4 took %lld microseconds", (fc4_time - fc3_time));
 		ESP_LOGI(TAG, "fc5 took %lld microseconds", (fc5_time - fc4_time));
@@ -179,7 +180,7 @@ int main(){
 		ESP_LOGI(TAG, "fc9 took %lld microseconds", (fc9_time - fc8_time));
 		ESP_LOGI(TAG, "fc10 took %lld microseconds", (fc10_time - fc9_time));
 		*/
-		
+
 		/*
 		float max = -INFINITY; 
 		int maxIdx = 0; 

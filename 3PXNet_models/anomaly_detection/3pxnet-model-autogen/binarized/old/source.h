@@ -16,8 +16,8 @@
 #include "110.h" 
 #include "111.h" 
 #include "112.h" 
-	#include "113.h" 
-	#include "114.h" 
+#include "113.h" 
+#include "114.h" 
 #include "115.h" 
 #include "116.h" 
 #include "117.h" 
@@ -121,49 +121,64 @@ int main(){
 	for(int img = 0; img < 1; img++) {
 		uint8_t *curr_im = l1_act + img*784*sizeof(uint8_t);
 		packBinThrsArr(curr_im, l1act_bin, F1I, 1);
-		/*int64_t start_time = esp_timer_get_time();
+		int res;
+		/*
+		int64_t start_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l1act_bin, l1wght, F1I, F1O, l2act_bin, bn1thr, bn1sign);
+		res = FcXnorWrap(l1act_bin, l1wght, F1I, F1O, l2act_bin, bn1thr, bn1sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc1 res is 1");
 		int64_t fc1_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l2act_bin, l2wght, F2I, F2O, l3act_bin, bn2thr, bn2sign);
+		res = FcXnorWrap(l2act_bin, l2wght, F2I, F2O, l3act_bin, bn2thr, bn2sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc2 res is 1");
 		int64_t fc2_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l3act_bin, l3wght, F3I, F3O, l4act_bin, bn3thr, bn3sign);
+		res = FcXnorWrap(l3act_bin, l3wght, F3I, F3O, l4act_bin, bn3thr, bn3sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
 		int64_t fc3_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn4thr, bn4sign);
+		res = FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn4thr, bn4sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
 		int64_t fc4_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn5thr, bn5sign);
+		res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn5thr, bn5sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc5 res is 1");
 		int64_t fc5_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l6act_bin, l6wght, F6I, F6O, l7act_bin, bn6thr, bn6sign);
+		res = FcXnorWrap(l6act_bin, l6wght, F6I, F6O, l7act_bin, bn6thr, bn6sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc6 res is 1");
 		int64_t fc6_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l7act_bin, l7wght, F7I, F7O, l8act_bin, bn7thr, bn7sign);*/
+		res = FcXnorWrap(l7act_bin, l7wght, F7I, F7O, l8act_bin, bn7thr, bn7sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc7 res is 1");
 		int64_t fc7_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l8act_bin, l8wght, F8I, F8O, l9act_bin, bn8thr, bn8sign);
+		res = FcXnorWrap(l8act_bin, l8wght, F8I, F8O, l9act_bin, bn8thr, bn8sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc8 res is 1");
+		*/
 		int64_t fc8_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorWrap(l9act_bin, l9wght, F9I, F9O, l10act_bin, bn9thr, bn9sign);
+		res = FcXnorWrap(l9act_bin, l9wght, F9I, F9O, l10act_bin, bn9thr, bn9sign);
+		if (res) ESP_LOGI(TAG, "ERROR: fc9 res is 1");
 		int64_t fc9_time = esp_timer_get_time();
 		for (int i = 0; i < 1000; i++)
-		FcXnorNoBinWrap(l10act_bin, l10wght, F10I, F10O, output, bn10mean, bn10var, bn10gamma, bn10beta);
+		res = FcXnorNoBinWrap(l10act_bin, l10wght, F10I, F10O, output, bn10mean, bn10var, bn10gamma, bn10beta);
+		if (res) ESP_LOGI(TAG, "ERROR: fc10 res is 1");
 		int64_t fc10_time = esp_timer_get_time();
 		
 		//ESP_LOGI(TAG, "forward pass took %lld microseconds", (fc10_time - start_time));
-		/*ESP_LOGI(TAG, "fc1 took %lld microseconds", (fc1_time - start_time));
+		/*
+		ESP_LOGI(TAG, "fc1 took %lld microseconds", (fc1_time - start_time));
 		ESP_LOGI(TAG, "fc2 took %lld microseconds", (fc2_time - fc1_time));
 		ESP_LOGI(TAG, "fc3 took %lld microseconds", (fc3_time - fc2_time));
 		ESP_LOGI(TAG, "fc4 took %lld microseconds", (fc4_time - fc3_time));
 		ESP_LOGI(TAG, "fc5 took %lld microseconds", (fc5_time - fc4_time));
 		ESP_LOGI(TAG, "fc6 took %lld microseconds", (fc6_time - fc5_time));
-		ESP_LOGI(TAG, "fc7 took %lld microseconds", (fc7_time - fc6_time));*/
+		ESP_LOGI(TAG, "fc7 took %lld microseconds", (fc7_time - fc6_time));
 		ESP_LOGI(TAG, "fc8 took %lld microseconds", (fc8_time - fc7_time));
 		ESP_LOGI(TAG, "fc9 took %lld microseconds", (fc9_time - fc8_time));
 		ESP_LOGI(TAG, "fc10 took %lld microseconds", (fc10_time - fc9_time));
+		*/
 		
 		/*
 		float max = -INFINITY; 

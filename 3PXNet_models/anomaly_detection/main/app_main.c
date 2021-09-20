@@ -18,5 +18,5 @@ void test(void *arg)
 
 void app_main()
 {
-    xTaskCreatePinnedToCore(&test, "test", 4096, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(test, "test", 4096, NULL, 5, NULL, 0);
 }
