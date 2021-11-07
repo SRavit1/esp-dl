@@ -8,9 +8,9 @@
 #include "esp_log.h"
 #include "printUtils.h"
 
-#define ESP_IMPL
-#define PNET
-#define QUANTIZED
+#define _3PXNET_IMPL
+#define ONET
+#define BINARIZE_BW1_INPUTBW2
 
 #if defined (ESP_IMPL)
 #if defined(FULL_PREC)
@@ -79,6 +79,78 @@ static const char *TAG = "app_process";
 #endif
 #endif
 
+#if defined(BINARIZE_BW1_INPUTBW2)
+#ifdef PNET
+#include "pnet_model_binary_bw1_input_bw2_46bf2839_autogen/source.h"
+#endif
+#ifdef RNET
+#include "rnet_model_binary_bw1_input_bw2_b17db2b0_autogen/source.h"
+#endif
+#ifdef ONET
+#include "onet_model_binary_bw1_input_bw2_0a2c3f60_autogen/source.h"
+#endif
+#endif
+
+#if defined(BINARIZE_BW1_INPUTBW4)
+#ifdef PNET
+#include "pnet_model_binary_bw1_input_bw4_a879e7fb_autogen/source.h"
+#endif
+#ifdef RNET
+#include "rnet_model_binary_bw1_input_bw4_031e30bf_autogen/source.h"
+#endif
+#ifdef ONET
+#include "onet_model_binary_bw1_input_bw4_55351e1a_autogen/source.h"
+#endif
+#endif
+
+#if defined(BINARIZE_BW1_INPUTBW6)
+#ifdef PNET
+#include "pnet_model_binary_bw1_input_bw6_e9f6532c_autogen/source.h"
+#endif
+#ifdef RNET
+#include "rnet_model_binary_bw1_input_bw6_3c2f38a4_autogen/source.h"
+#endif
+#ifdef ONET
+#include "onet_model_binary_bw1_input_bw6_ab918c15_autogen/source.h"
+#endif
+#endif
+
+#if defined(BINARIZE_BW2_INPUTBW2)
+#ifdef PNET
+#include "pnet_model_binary_bw2_input_bw2_54fb74db_autogen/source.h"
+#endif
+#ifdef RNET
+#include "rnet_model_binary_bw2_input_bw2_c3091def_autogen/source.h"
+#endif
+#ifdef ONET
+#include "onet_model_binary_bw2_input_bw2_6695afda_autogen/source.h"
+#endif
+#endif
+
+#if defined(BINARIZE_BW2_INPUTBW4)
+#ifdef PNET
+#include "pnet_model_binary_bw2_input_bw4_5c9e98e8_autogen/source.h"
+#endif
+#ifdef RNET
+#include "rnet_model_binary_bw2_input_bw4_c580b651_autogen/source.h"
+#endif
+#ifdef ONET
+#include "onet_model_binary_bw2_input_bw4_941626bc_autogen/source.h"
+#endif
+#endif
+
+#if defined(BINARIZE_BW2_INPUTBW6)
+#ifdef PNET
+#include "pnet_model_binary_bw2_input_bw6_2388faf8_autogen/source.h"
+#endif
+#ifdef RNET
+#include "rnet_model_binary_bw2_input_bw6_d9bd48e5_autogen/source.h"
+#endif
+#ifdef ONET
+#include "onet_model_binary_bw2_input_bw6_b31bf2aa_autogen/source.h"
+#endif
+#endif
+
 void pnet_lite_f_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t *offset){
         int res;
 
@@ -86,6 +158,8 @@ void pnet_lite_f_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t 
         uint8_t *curr_im = in->item;
         //this conversion is incorrect, but sufficient for inference time measurements
         int8_t *curr_im_int8 = (int8_t*) curr_im;
+        //This is very incorrect, since it is just casting pointer types. TODO: Fix it.
+        pckDtype* curr_im_packed = (pckDtype*)curr_im;
 #ifdef BINARIZE
         int64_t time_start = esp_timer_get_time();
         CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL,1);
@@ -154,12 +228,41 @@ void pnet_lite_f_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t 
         if (res) ESP_LOGI(TAG, "ERROR: conv5 res is 1");
         int64_t time_conv5 = esp_timer_get_time();
 #endif
-        ESP_LOGI(TAG, "pnet forward pass finished in %lld mu_s.", (time_conv5 - time_start));
+#ifdef BINARIZE_BW1_INPUTBW2
+        int64_t time_start = esp_timer_get_time();
+        //CnBwnWrap(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL);
+        CnBnMulti(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset, 2, 1);
+        int64_t time_conv1 = esp_timer_get_time();
+        /*CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL);
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL);
+        int res0 = CnXnorNoBinWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, output, C4PD, C4PL, bn1mean, bn1var, bn1gamma, bn1beta);
+        int res1 = CnXnorNoBinWrap(l5act_bin, l5wght, C5Z, C5XY, C5XY, C5Z, C5KXY, C5KXY, C5KZ, output, C5PD, C5PL, bn1mean, bn1var, bn1gamma, bn1beta);*/
+#endif
+#ifdef BINARIZE_BW1_INPUTBW4
+#endif
+#ifdef BINARIZE_BW1_INPUTBW6
+#endif
+#ifdef BINARIZE_BW2_INPUTBW2
+#endif
+#ifdef BINARIZE_BW2_INPUTBW4
+#endif
+#ifdef BINARIZE_BW2_INPUTBW6
+#endif
+        ESP_LOGI(TAG, "category output");
+        for (int i = 0; i < 2; i++) {
+            printf("%f, ", category->item[i]);
+        }
+        ESP_LOGI(TAG, "offset output");
+        for (int i = 0; i < 4; i++) {
+            printf("%f, ", offset->item[i]);
+        }
+
+        //ESP_LOGI(TAG, "pnet forward pass finished in %lld mu_s.", (time_conv5 - time_start));
         ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv1 - time_start));
-        ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv2 - time_conv1));
+        /*ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv2 - time_conv1));
         ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv3 - time_conv2));
         ESP_LOGI(TAG, "conv_4 time: %lld mu_s.", (time_conv4 - time_conv3));
-        ESP_LOGI(TAG, "conv_5 time: %lld mu_s.", (time_conv5 - time_conv4));
+        ESP_LOGI(TAG, "conv_5 time: %lld mu_s.", (time_conv5 - time_conv4));*/
 #endif
 }
 
@@ -170,9 +273,11 @@ void rnet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *catego
         uint8_t *curr_im = in->item;
         //this conversion is incorrect, but sufficient for inference time measurements
         int8_t *curr_im_int8 = (int8_t*) curr_im;
+        //This is very incorrect, since it is just casting pointer types. TODO: Fix it.
+        pckDtype* curr_im_packed = (pckDtype*)curr_im;
 #ifdef BINARIZE
         int64_t time_start = esp_timer_get_time();
-        CnBwnWrap(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
         int64_t time_conv1 = esp_timer_get_time();
         res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 1, 1);
         if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
@@ -250,13 +355,79 @@ void rnet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *catego
         if (res) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
         int64_t time_fc3 = esp_timer_get_time();
 #endif
-        ESP_LOGI(TAG, "rnet forward pass finished in %lld mu_s.", (time_fc3 - time_start));
+#ifdef BINARIZE_BW1_INPUTBW2
+        int64_t time_start = esp_timer_get_time();
+        //CnBwnWrap(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL);
+        CnBnMulti(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset, 1, 1);
+        int64_t time_conv1 = esp_timer_get_time();
+        /*CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL);
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL);
+        FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn1thr, bn1sign, bn1offset);
+        int res0 = FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, output, bn2mean, bn2var, bn2gamma, bn2beta);
+        int res1 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn2mean, bn2var, bn2gamma, bn2beta);*/
+#endif
+#ifdef BINARIZE_BW1_INPUTBW4
+int64_t time_start = esp_timer_get_time();
+        //CnBwnWrap(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL);
+        CnBnMulti(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset, 4, 1);
+        int64_t time_conv1 = esp_timer_get_time();
+        /*CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL);
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL);
+        FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn1thr, bn1sign, bn1offset);
+        int res0 = FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, output, bn2mean, bn2var, bn2gamma, bn2beta);
+        int res1 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn2mean, bn2var, bn2gamma, bn2beta);*/
+#endif
+#ifdef BINARIZE_BW1_INPUTBW6
+int64_t time_start = esp_timer_get_time();
+        //CnBwnWrap(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL);
+        CnBnMulti(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset, 6, 1);
+        int64_t time_conv1 = esp_timer_get_time();
+        /*CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL);
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL);
+        FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn1thr, bn1sign, bn1offset);
+        int res0 = FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, output, bn2mean, bn2var, bn2gamma, bn2beta);
+        int res1 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn2mean, bn2var, bn2gamma, bn2beta);*/
+#endif
+#ifdef BINARIZE_BW2_INPUTBW2
+int64_t time_start = esp_timer_get_time();
+        //CnBwnWrap(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL);
+        CnBnMulti(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset, 2, 2);
+        int64_t time_conv1 = esp_timer_get_time();
+        /*CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL);
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL);
+        FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn1thr, bn1sign, bn1offset);
+        int res0 = FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, output, bn2mean, bn2var, bn2gamma, bn2beta);
+        int res1 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn2mean, bn2var, bn2gamma, bn2beta);*/
+#endif
+#ifdef BINARIZE_BW2_INPUTBW4
+int64_t time_start = esp_timer_get_time();
+        //CnBwnWrap(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL);
+        CnBnMulti(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset, 4, 2);
+        int64_t time_conv1 = esp_timer_get_time();
+        /*CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL);
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL);
+        FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn1thr, bn1sign, bn1offset);
+        int res0 = FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, output, bn2mean, bn2var, bn2gamma, bn2beta);
+        int res1 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn2mean, bn2var, bn2gamma, bn2beta);*/
+#endif
+#ifdef BINARIZE_BW2_INPUTBW6
+int64_t time_start = esp_timer_get_time();
+        //CnBwnWrap(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL);
+        CnBnMulti(curr_im_packed, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset, 6, 2);
+        int64_t time_conv1 = esp_timer_get_time();
+        /*CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL);
+        CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL);
+        FcXnorWrap(l4act_bin, l4wght, F4I, F4O, l5act_bin, bn1thr, bn1sign, bn1offset);
+        int res0 = FcXnorNoBinWrap(l5act_bin, l5wght, F5I, F5O, output, bn2mean, bn2var, bn2gamma, bn2beta);
+        int res1 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn2mean, bn2var, bn2gamma, bn2beta);*/
+#endif
+        //ESP_LOGI(TAG, "rnet forward pass finished in %lld mu_s.", (time_fc3 - time_start));
         ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv1 - time_start));
-        ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv2 - time_conv1));
+        /*ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv2 - time_conv1));
         ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv3 - time_conv2));
         ESP_LOGI(TAG, "fc_1 time: %lld mu_s.", (time_fc1 - time_conv3));
         ESP_LOGI(TAG, "fc_2 time: %lld mu_s.", (time_fc2 - time_fc1));
-        ESP_LOGI(TAG, "fc_3 time: %lld mu_s.", (time_fc3 - time_fc2));
+        ESP_LOGI(TAG, "fc_3 time: %lld mu_s.", (time_fc3 - time_fc2));*/
 #endif
 }
 
@@ -266,9 +437,12 @@ void onet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *catego
         uint8_t *curr_im = in->item;
         //this conversion is incorrect, but sufficient for inference time measurements
 	int8_t *curr_im_int8 = (int8_t*) curr_im;
+        //This is very incorrect, since it is just casting pointer types. TODO: Fix it.
+        pckDtype* curr_im_packed = (pckDtype*)curr_im;
+        
 #ifdef BINARIZE
         int64_t time_start = esp_timer_get_time();
-        CnBwnWrap(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
         int64_t time_conv1 = esp_timer_get_time();
         res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 1, 1);
         if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
@@ -294,7 +468,7 @@ void onet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *catego
 #endif
 #ifdef TERNARIZE_LOW
         int64_t time_start = esp_timer_get_time();
-        CnBwnWrap(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
         int64_t time_conv1 = esp_timer_get_time();
         res = Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 1, 1);
         if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
@@ -320,7 +494,7 @@ void onet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *catego
 #endif
 #ifdef TERNARIZE_MEDIUM
         int64_t time_start = esp_timer_get_time();
-        CnBwnWrap(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
         int64_t time_conv1 = esp_timer_get_time();
         res = Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 1, 1);
         if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
@@ -346,7 +520,7 @@ void onet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *catego
 #endif
 #ifdef TERNARIZE_HIGH
         int64_t time_start = esp_timer_get_time();
-        CnBwnWrap(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
+        CnBwnWrap(curr_im_int8, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL, 1);
         int64_t time_conv1 = esp_timer_get_time();
         res = Cn3pxnWrap(l2act_bin, l2wght, l2ind, C2NPI, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL, 1, 1);
         if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
@@ -370,6 +544,162 @@ void onet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *catego
         if (res) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
         int64_t time_fc4 = esp_timer_get_time();
 #endif
+#ifdef BINARIZE_BW1_INPUTBW2
+        int64_t time_start = esp_timer_get_time();
+        CnBnMulti(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset,2,1);
+        int64_t time_conv1 = esp_timer_get_time();
+        res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
+        int64_t time_conv2 = esp_timer_get_time();
+        res = CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv3 res is 1");
+        int64_t time_conv3 = esp_timer_get_time();
+        res = CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv4 res is 1");
+        int64_t time_conv4 = esp_timer_get_time();
+        res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn1thr, bn1sign, bn1offset,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: fc1 res is 1");
+        int64_t time_fc1 = esp_timer_get_time();
+        int res0 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        if (res0) ESP_LOGI(TAG, "ERROR: fc2 res is 1");
+        int64_t time_fc2 = esp_timer_get_time();
+        int res1 = FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        if (res1) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
+        int64_t time_fc3 = esp_timer_get_time();
+        int res2 = FcXnorNoBinWrap(l8act_bin, l8wght, F8I, F8O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        int64_t time_fc4 = esp_timer_get_time();
+        if (res2) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
+#endif
+#ifdef BINARIZE_BW1_INPUTBW4
+        int64_t time_start = esp_timer_get_time();
+        CnBnMulti(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset,4,1);
+        int64_t time_conv1 = esp_timer_get_time();
+        res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
+        int64_t time_conv2 = esp_timer_get_time();
+        res = CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv3 res is 1");
+        int64_t time_conv3 = esp_timer_get_time();
+        res = CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv4 res is 1");
+        int64_t time_conv4 = esp_timer_get_time();
+        res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn1thr, bn1sign, bn1offset,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: fc1 res is 1");
+        int64_t time_fc1 = esp_timer_get_time();
+        int res0 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        if (res0) ESP_LOGI(TAG, "ERROR: fc2 res is 1");
+        int64_t time_fc2 = esp_timer_get_time();
+        int res1 = FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        if (res1) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
+        int64_t time_fc3 = esp_timer_get_time();
+        int res2 = FcXnorNoBinWrap(l8act_bin, l8wght, F8I, F8O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        int64_t time_fc4 = esp_timer_get_time();
+        if (res2) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
+#endif
+#ifdef BINARIZE_BW1_INPUTBW6
+        int64_t time_start = esp_timer_get_time();
+        CnBnMulti(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset,6,1);
+        int64_t time_conv1 = esp_timer_get_time();
+        res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
+        int64_t time_conv2 = esp_timer_get_time();
+        res = CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv3 res is 1");
+        int64_t time_conv3 = esp_timer_get_time();
+        res = CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, NULL, NULL,NULL,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: conv4 res is 1");
+        int64_t time_conv4 = esp_timer_get_time();
+        res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn1thr, bn1sign, bn1offset,1,1);
+        if (res) ESP_LOGI(TAG, "ERROR: fc1 res is 1");
+        int64_t time_fc1 = esp_timer_get_time();
+        int res0 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        if (res0) ESP_LOGI(TAG, "ERROR: fc2 res is 1");
+        int64_t time_fc2 = esp_timer_get_time();
+        int res1 = FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        if (res1) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
+        int64_t time_fc3 = esp_timer_get_time();
+        int res2 = FcXnorNoBinWrap(l8act_bin, l8wght, F8I, F8O, output, bn4mean, bn4var, bn4gamma, bn4beta,1,1);
+        int64_t time_fc4 = esp_timer_get_time();
+        if (res2) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
+#endif
+#ifdef BINARIZE_BW2_INPUTBW2
+        int64_t time_start = esp_timer_get_time();
+        CnBnMulti(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset,2,2);
+        int64_t time_conv1 = esp_timer_get_time();
+        res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
+        int64_t time_conv2 = esp_timer_get_time();
+        res = CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv3 res is 1");
+        int64_t time_conv3 = esp_timer_get_time();
+        res = CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv4 res is 1");
+        int64_t time_conv4 = esp_timer_get_time();
+        res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn1thr, bn1sign, bn1offset,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: fc1 res is 1");
+        int64_t time_fc1 = esp_timer_get_time();
+        int res0 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        if (res0) ESP_LOGI(TAG, "ERROR: fc2 res is 1");
+        int64_t time_fc2 = esp_timer_get_time();
+        int res1 = FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        if (res1) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
+        int64_t time_fc3 = esp_timer_get_time();
+        int res2 = FcXnorNoBinWrap(l8act_bin, l8wght, F8I, F8O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        int64_t time_fc4 = esp_timer_get_time();
+        if (res2) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
+#endif
+#ifdef BINARIZE_BW2_INPUTBW4
+        int64_t time_start = esp_timer_get_time();
+        CnBnMulti(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset,4,2);
+        int64_t time_conv1 = esp_timer_get_time();
+        res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
+        int64_t time_conv2 = esp_timer_get_time();
+        res = CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv3 res is 1");
+        int64_t time_conv3 = esp_timer_get_time();
+        res = CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv4 res is 1");
+        int64_t time_conv4 = esp_timer_get_time();
+        res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn1thr, bn1sign, bn1offset,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: fc1 res is 1");
+        int64_t time_fc1 = esp_timer_get_time();
+        int res0 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        if (res0) ESP_LOGI(TAG, "ERROR: fc2 res is 1");
+        int64_t time_fc2 = esp_timer_get_time();
+        int res1 = FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        if (res1) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
+        int64_t time_fc3 = esp_timer_get_time();
+        int res2 = FcXnorNoBinWrap(l8act_bin, l8wght, F8I, F8O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        int64_t time_fc4 = esp_timer_get_time();
+        if (res2) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
+#endif
+#ifdef BINARIZE_BW2_INPUTBW6
+        int64_t time_start = esp_timer_get_time();
+        CnBnMulti(curr_im, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset,6,2);
+        int64_t time_conv1 = esp_timer_get_time();
+        res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv2 res is 1");
+        int64_t time_conv2 = esp_timer_get_time();
+        res = CnXnorWrap(l3act_bin, l3wght, C3Z, C3XY, C3XY, C3Z, C3KXY, C3KXY, C3KZ, l4act_bin, C3PD, C3PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv3 res is 1");
+        int64_t time_conv3 = esp_timer_get_time();
+        res = CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, NULL, NULL,NULL,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: conv4 res is 1");
+        int64_t time_conv4 = esp_timer_get_time();
+        res = FcXnorWrap(l5act_bin, l5wght, F5I, F5O, l6act_bin, bn1thr, bn1sign, bn1offset,2,2);
+        if (res) ESP_LOGI(TAG, "ERROR: fc1 res is 1");
+        int64_t time_fc1 = esp_timer_get_time();
+        int res0 = FcXnorNoBinWrap(l6act_bin, l6wght, F6I, F6O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        if (res0) ESP_LOGI(TAG, "ERROR: fc2 res is 1");
+        int64_t time_fc2 = esp_timer_get_time();
+        int res1 = FcXnorNoBinWrap(l7act_bin, l7wght, F7I, F7O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        if (res1) ESP_LOGI(TAG, "ERROR: fc3 res is 1");
+        int64_t time_fc3 = esp_timer_get_time();
+        int res2 = FcXnorNoBinWrap(l8act_bin, l8wght, F8I, F8O, output, bn4mean, bn4var, bn4gamma, bn4beta,2,2);
+        int64_t time_fc4 = esp_timer_get_time();
+        if (res2) ESP_LOGI(TAG, "ERROR: fc4 res is 1");
+#endif
         ESP_LOGI(TAG, "onet forward pass finished in %lld mu_s.", (time_fc4 - time_start));
         ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv1 - time_start));
         ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv2 - time_conv1));
@@ -379,460 +709,10 @@ void onet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *catego
         ESP_LOGI(TAG, "fc_2 time: %lld mu_s.", (time_fc2 - time_fc1));
         ESP_LOGI(TAG, "fc_3 time: %lld mu_s.", (time_fc3 - time_fc2));
         ESP_LOGI(TAG, "fc_4 time: %lld mu_s.", (time_fc4 - time_fc3));
+        ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv1 - time_start));
 #endif
 }
 
-#elif defined (ESP_IMPL)
-#if defined(FULL_PREC)
-void pnet_lite_f_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t *offset) {
-        ESP_LOGI(TAG, "Custom pnet_lite_f called!");
-
-        int64_t time_start = esp_timer_get_time();
-        dl_matrix3d_t *out_conv_1 = dl_matrix3duf_conv_common(in, &pnet_conv2d_kernel1, 0, 1, 1, PADDING_VALID);
-        dl_matrix3d_relu(out_conv_1);
-        int64_t time_conv_1 = esp_timer_get_time();
-        dl_matrix3d_t *out_pool_1 = dl_matrix3d_pooling(out_conv_1, 2, 2, 2, 2, PADDING_VALID, DL_POOLING_MAX);
-        int64_t time_pool_1 = esp_timer_get_time();;
-        dl_matrix3d_t *out_conv_2 = dl_matrix3dff_conv_common(out_pool_1, &pnet_conv2d_kernel2, 0, 1, 1, PADDING_VALID);
-        dl_matrix3d_relu(out_conv_2);
-        int64_t time_conv_2 = esp_timer_get_time();
-        dl_matrix3d_t *out_conv_3 = dl_matrix3dff_conv_common(out_conv_2, &pnet_conv2d_kernel3, 0, 1, 1, PADDING_VALID);
-        dl_matrix3d_relu(out_conv_3);
-        int64_t time_conv_3 = esp_timer_get_time();
-        *category = *(dl_matrix3dff_conv_common(out_conv_3, &pnet_conv2d_kernel4, 0, 1, 1, PADDING_VALID));
-        dl_matrix3d_softmax(category); //TODO: How to indicate that this should be done over axis 3?
-        int64_t time_category = esp_timer_get_time();
-        *offset = *(dl_matrix3dff_conv_common(out_conv_3, &pnet_conv2d_kernel5, 0, 1, 1, PADDING_VALID));
-        int64_t time_finish = esp_timer_get_time();
-
-        //TODO: Call free as soon as tensors are no longer live
-        dl_matrix3d_free(out_conv_1);
-        //TODO: The following statement causes problems
-        //dl_matrix3d_free(out_pool_1);
-        dl_matrix3d_free(out_conv_2);
-        dl_matrix3d_free(out_conv_3);
-
-        ESP_LOGI(TAG, "pnet forward pass finished in %lld mu_s.", (time_finish - time_start));
-        ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv_1 - time_start));
-        ESP_LOGI(TAG, "pool_1 time: %lld mu_s.", (time_pool_1 - time_conv_1));
-        ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv_2 - time_pool_1));
-        ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv_3 - time_conv_2));
-        ESP_LOGI(TAG, "category time: %lld mu_s.", (time_category - time_conv_3));
-        ESP_LOGI(TAG, "offset time: %lld mu_s.", (time_finish - time_category));
-}
-
-void rnet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t *offset) {
-        ESP_LOGI(TAG, "Custom rnet_lite_f_with_score_verify called!");
-
-        int64_t time_start = esp_timer_get_time();
-        dl_matrix3d_t *out_conv_1 = dl_matrix3duf_conv_common(in, &rnet_conv2d_kernel1, 0, 1, 1, PADDING_VALID);
-        dl_matrix3d_relu(out_conv_1);
-        int64_t time_conv_1 = esp_timer_get_time();
-        dl_matrix3d_t *out_pool_1 = dl_matrix3d_pooling(out_conv_1, 2, 2, 2, 2, PADDING_VALID, DL_POOLING_MAX);
-        int64_t time_pool_1 = esp_timer_get_time();
-        dl_matrix3d_t *out_conv_2 = dl_matrix3dff_conv_common(out_pool_1, &rnet_conv2d_kernel2, 0, 1, 1, PADDING_VALID);
-        dl_matrix3d_relu(out_conv_2);
-        int64_t time_conv_2 = esp_timer_get_time();
-        dl_matrix3d_t *out_pool_2 = dl_matrix3d_pooling(out_conv_2, 3, 3, 3, 3, PADDING_VALID, DL_POOLING_MAX);
-        int64_t time_pool_2 = esp_timer_get_time();
-        dl_matrix3d_t *out_conv_3 = dl_matrix3dff_conv_common(out_pool_2, &rnet_conv2d_kernel3, 0, 1, 1, PADDING_VALID);
-        dl_matrix3d_relu(out_conv_3);
-        int64_t time_conv_3 = esp_timer_get_time();
-        //flatten out_conv_3 for matrix multiplication
-        out_conv_3->c = out_conv_3->h*out_conv_3->w*out_conv_3->c;
-        out_conv_3->h = 1;
-        out_conv_3->w = 1;
-        dl_matrix3d_t *out_dense_1 = dl_matrix3d_alloc(1, 1, 1, rnet_dense_kernel1.h);
-        dl_matrix3dff_fc(out_dense_1, out_conv_3, &rnet_dense_kernel1);
-        dl_matrix3d_relu(out_dense_1);
-        int64_t time_dense_1 = esp_timer_get_time();
-        *category = *(dl_matrix3d_alloc(1, 1, 1, rnet_dense_kernel2.h));
-        dl_matrix3dff_fc(category, out_dense_1, &rnet_dense_kernel2);
-        dl_matrix3d_softmax(category);
-        int64_t time_category = esp_timer_get_time();
-        *offset = *(dl_matrix3d_alloc(1, 1, 1, rnet_dense_kernel3.h));
-        dl_matrix3dff_fc(offset, out_dense_1, &rnet_dense_kernel3);
-        int64_t time_finish = esp_timer_get_time();
-
-        //TODO: Call free as soon as tensors are no longer live
-        dl_matrix3d_free(out_conv_1);
-        //dl_matrix3d_free(out_pool_1);
-        dl_matrix3d_free(out_conv_2);
-        //dl_matrix3d_free(out_pool_2);
-        dl_matrix3d_free(out_conv_3);
-        dl_matrix3d_free(out_dense_1);
-
-        ESP_LOGI(TAG, "rnet forward pass finished in %lld mu_s.", (time_finish - time_start));
-        ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv_1 - time_start));
-        ESP_LOGI(TAG, "pool_1 time: %lld mu_s.", (time_pool_1 - time_conv_1));
-        ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv_2 - time_pool_1));
-        ESP_LOGI(TAG, "pool_2 time: %lld mu_s.", (time_pool_2 - time_conv_2));
-        ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv_3 - time_pool_2));
-        ESP_LOGI(TAG, "dense_1 time: %lld mu_s.", (time_dense_1 - time_conv_3));
-        ESP_LOGI(TAG, "category time: %lld mu_s.", (time_category - time_dense_1));
-        ESP_LOGI(TAG, "offset time: %lld mu_s.", (time_finish - time_category));
-}
-
-void onet_lite_f_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *category, dl_matrix3d_t *offset, dl_matrix3d_t *landmark) {
-    ESP_LOGI(TAG, "Custom onet_lite_f_with_score_verify called!");
-
-    int64_t time_start = esp_timer_get_time();
-    dl_matrix3d_t *out_conv_1 = dl_matrix3duf_conv_common(in, &onet_conv2d_kernel1, &onet_conv2d_bias1, 1, 1, PADDING_VALID);
-    dl_matrix3d_relu(out_conv_1);
-    
-    dl_matrix3d_t *mat;
-    mat = out_conv_1;
-    printf("\nfirst values of fp out_conv_1 onet");
-    for (int i = 0; i < 10; i++)
-            printf("%f, ", out_conv_1->item[i]);
-    printf("\nout_conv_1 size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-
-
-    int64_t time_conv_1 = esp_timer_get_time();
-    dl_matrix3d_t *out_pool_1 = dl_matrix3d_pooling(out_conv_1, 3, 3, 3, 3, PADDING_VALID, DL_POOLING_MAX);
-    
-    printf("\nfirst values of fp out_pool_1 onet");
-    for (int i = 0; i < 10; i++)
-            printf("%f, ", out_pool_1->item[i]);
-    mat = out_pool_1;
-    printf("\nout_pool_1 size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-
-    int64_t time_pool_1 = esp_timer_get_time();
-    dl_matrix3d_t *out_conv_2 = dl_matrix3dff_conv_common(out_pool_1, &onet_conv2d_kernel2, &onet_conv2d_bias2, 1, 1, PADDING_VALID);
-    dl_matrix3d_relu(out_conv_2);
-
-    printf("\nfirst values of fp out_conv_2 onet");
-    for (int i = 0; i < 10; i++)
-            printf("%f, ", out_conv_2->item[i]);
-    mat = out_conv_2;
-    printf("\nout_conv_2 size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-
-    int64_t time_conv_2 = esp_timer_get_time();
-    dl_matrix3d_t *out_pool_2 = dl_matrix3d_pooling(out_conv_2, 3, 3, 3, 3, PADDING_VALID, DL_POOLING_MAX);
-    
-
-    printf("\nfirst values of fp out_pool_2 onet");
-    for (int i = 0; i < 10; i++)
-            printf("%f, ", out_pool_2->item[i]);
-    mat = out_pool_2;
-    printf("\nout_pool_2 size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-
-    int64_t time_pool_2 = esp_timer_get_time();
-    dl_matrix3d_t *out_conv_3 = dl_matrix3dff_conv_common(out_pool_2, &onet_conv2d_kernel3, &onet_conv2d_bias3, 1, 1, PADDING_VALID);
-    dl_matrix3d_relu(out_conv_3);
-
-    printf("\nfirst values of fp out_conv_3 onet");
-    for (int i = 0; i < 10; i++)
-            printf("%f, ", out_conv_3->item[i]);
-    mat = out_conv_3;
-    printf("\nout_conv_3 size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-
-    int64_t time_conv_3 = esp_timer_get_time();
-    dl_matrix3d_t *out_conv_4 = dl_matrix3dff_conv_common(out_conv_3, &onet_conv2d_kernel4, &onet_conv2d_bias4, 1, 1, PADDING_VALID);
-    
-    printf("\nfirst values of fp out_conv_4 onet");
-    for (int i = 0; i < 10; i++)
-            printf("%f, ", out_conv_4->item[i]);
-    mat = out_conv_4;
-    printf("\nout_conv_4 size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-
-    int64_t time_conv4 = esp_timer_get_time();
-    //flatten out_conv_4 for matrix multiplication
-    out_conv_4->c = out_conv_4->h*out_conv_4->w*out_conv_4->c;
-    out_conv_4->h = 1;
-    out_conv_4->w = 1;
-    dl_matrix3d_t *out_dense_1 = dl_matrix3d_alloc(1, 1, 1, onet_dense_kernel1.h);
-    dl_matrix3dff_fc(out_dense_1, out_conv_4, &onet_dense_kernel1);
-    dl_matrix3d_relu(out_dense_1);
-    
-    printf("\nfirst values of fp out_dense_1 onet");
-    for (int i = 0; i < 10; i++)
-        printf("%f, ", out_dense_1->item[i]);
-    mat = out_dense_1;
-    printf("\nout_dense_1 size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-    
-    int64_t time_dense_1 = esp_timer_get_time();
-    *category = *(dl_matrix3d_alloc(1, 1, 1, onet_dense_kernel2.h));
-    dl_matrix3dff_fc(category, out_dense_1, &onet_dense_kernel2);
-    dl_matrix3d_softmax(category);
-    int64_t time_category = esp_timer_get_time();
-    *offset = *(dl_matrix3d_alloc(1, 1, 1, onet_dense_kernel3.h));
-    dl_matrix3dff_fc(offset, out_dense_1, &onet_dense_kernel3);
-    int64_t time_offset = esp_timer_get_time();
-    *landmark = *(dl_matrix3d_alloc(1, 1, 1, onet_dense_kernel4.h));
-    dl_matrix3dff_fc(landmark, out_dense_1, &onet_dense_kernel4);
-    int64_t time_finish = esp_timer_get_time();
-
-    //TODO: Call free as soon as tensors are no longer live
-    dl_matrix3d_free(out_conv_1);
-    //dl_matrix3d_free(out_pool_1);
-    dl_matrix3d_free(out_conv_2);
-    //dl_matrix3d_free(out_pool_2);
-    dl_matrix3d_free(out_conv_3);
-    dl_matrix3d_free(out_dense_1);
-
-    printf("\nvalues of offset onet_lite_f_with_score_verify_esp output: ");
-    for (int i = 0; i < 4; i++)
-        printf("%f, ", offset->item[i]);
-    mat = offset;
-    printf("\noffset size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-
-    ESP_LOGI(TAG, "onet forward pass finished in %lld mu_s.", (time_finish - time_start));
-    ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv_1 - time_start));
-    ESP_LOGI(TAG, "pool_1 time: %lld mu_s.", (time_pool_1 - time_conv_1));
-    ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv_2 - time_pool_1));
-    ESP_LOGI(TAG, "pool_2 time: %lld mu_s.", (time_pool_2 - time_conv_2));
-    ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv_3 - time_pool_2));
-    ESP_LOGI(TAG, "conv_4 time: %lld mu_s.", (time_conv4 - time_conv_3));
-    ESP_LOGI(TAG, "dense_1 time: %lld mu_s.", (time_dense_1 - time_conv4));
-    ESP_LOGI(TAG, "category time: %lld mu_s.", (time_category - time_dense_1));
-    ESP_LOGI(TAG, "offset time: %lld mu_s.", (time_offset - time_category));
-    ESP_LOGI(TAG, "landmark time: %lld mu_s.", (time_finish - time_offset));
-}
-#endif
-#if defined(QUANTIZED)
-const int EXP_TODO = -12;
-
-int pnet_lite_q_esp(dl_matrix3du_t *in, dl_matrix3d_t *category_f, dl_matrix3d_t *offset_f, dl_conv_mode mode) {
-    int64_t time_start = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_1 = dl_matrix3duq_conv_common(in, &pnet_conv2d_kernel1, &pnet_conv2d_bias1, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_1);
-    int64_t time_conv_1 = esp_timer_get_time();
-    dl_matrix3dq_t *out_pool_1 = dl_matrix3dq_pooling(out_conv_1, 2, 2, 2, 2, PADDING_VALID, DL_POOLING_MAX);
-    int64_t time_pool_1 = esp_timer_get_time();;
-    dl_matrix3dq_t *out_conv_2 = dl_matrix3dqq_conv_common(out_pool_1, &pnet_conv2d_kernel2, &pnet_conv2d_bias2, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_2);
-    int64_t time_conv_2 = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_3 = dl_matrix3dqq_conv_common(out_conv_2, &pnet_conv2d_kernel3, &pnet_conv2d_bias3, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_3);
-    int64_t time_conv_3 = esp_timer_get_time();
-    dl_matrix3dq_t *category = dl_matrix3dqq_conv_common(out_conv_3, &pnet_conv2d_kernel4, &pnet_conv2d_bias4, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    *category_f = *(dl_matrix3d_from_matrixq(category));
-    dl_matrix3d_softmax(category_f); //TODO: How to indicate that this should be done over axis 3?
-    int64_t time_category = esp_timer_get_time();
-    dl_matrix3dq_t *offset = dl_matrix3dqq_conv_common(out_conv_3, &pnet_conv2d_kernel5, &pnet_conv2d_bias5, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    *offset_f = *(dl_matrix3d_from_matrixq(offset));
-    int64_t time_finish = esp_timer_get_time();
-    
-    ESP_LOGI(TAG, "pnet forward pass finished in %lld mu_s.", (time_finish - time_start));
-    ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv_1 - time_start));
-    ESP_LOGI(TAG, "pool_1 time: %lld mu_s.", (time_pool_1 - time_conv_1));
-    ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv_2 - time_pool_1));
-    ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv_3 - time_conv_2));
-    ESP_LOGI(TAG, "category time: %lld mu_s.", (time_category - time_conv_3));
-    ESP_LOGI(TAG, "offset time: %lld mu_s.", (time_finish - time_category));
-
-    //TODO: Call free as soon as tensors are no longer live
-    dl_matrix3dq_free(out_conv_1);
-    //TODO: The following statement causes problems
-    //dl_matrix3dq_free(out_pool_1);
-    dl_matrix3dq_free(out_conv_2);
-    dl_matrix3dq_free(out_conv_3);
-    dl_matrix3dq_free(offset);
-    dl_matrix3dq_free(category);
-
-    return 1;
-}
-
-int rnet_lite_q_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *category_f, dl_matrix3d_t *offset_f, dl_conv_mode mode, float threshold) {
-    int64_t time_start = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_1 = dl_matrix3duq_conv_common(in, &rnet_conv2d_kernel1, &rnet_conv2d_bias1, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_1);
-    int64_t time_conv_1 = esp_timer_get_time();
-    dl_matrix3dq_t *out_pool_1 = dl_matrix3dq_pooling(out_conv_1, 2, 2, 2, 2, PADDING_VALID, DL_POOLING_MAX);
-    int64_t time_pool_1 = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_2 = dl_matrix3dqq_conv_common(out_pool_1, &rnet_conv2d_kernel2, &rnet_conv2d_bias2, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_2);
-    int64_t time_conv_2 = esp_timer_get_time();
-    dl_matrix3dq_t *out_pool_2 = dl_matrix3dq_pooling(out_conv_2, 3, 3, 3, 3, PADDING_VALID, DL_POOLING_MAX);
-    int64_t time_pool_2 = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_3 = dl_matrix3dqq_conv_common(out_pool_2, &rnet_conv2d_kernel3, &rnet_conv2d_bias3, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_3);
-    int64_t time_conv_3 = esp_timer_get_time();
-    //flatten out_conv_3 for matrix multiplication
-    out_conv_3->c = out_conv_3->h*out_conv_3->w*out_conv_3->c;
-    out_conv_3->h = 1;
-    out_conv_3->w = 1;
-    dl_matrix3dq_t *out_dense_1 = dl_matrix3dq_alloc(1, 1, 1, rnet_dense_kernel1.h, EXP_TODO);
-    dl_matrix3dqq_fc(out_dense_1, out_conv_3, &rnet_dense_kernel1, mode, "out_dense_1");
-    dl_matrix3dq_relu(out_dense_1);
-    int64_t time_dense_1 = esp_timer_get_time();
-    dl_matrix3dq_t *category = dl_matrix3dq_alloc(1, 1, 1, rnet_dense_kernel2.h, EXP_TODO);
-    dl_matrix3dqq_fc(category, out_dense_1, &rnet_dense_kernel2, mode, "category");
-    *category_f = *(dl_matrix3d_from_matrixq(category));
-    dl_matrix3d_softmax(category_f);
-    int64_t time_category = esp_timer_get_time();
-    dl_matrix3dq_t *offset = dl_matrix3dq_alloc(1, 1, 1, rnet_dense_kernel3.h, EXP_TODO);
-    dl_matrix3dqq_fc(offset, out_dense_1, &rnet_dense_kernel3, mode, "offset");
-    *offset_f = *(dl_matrix3d_from_matrixq(offset));
-    int64_t time_finish = esp_timer_get_time();
-    
-    ESP_LOGI(TAG, "rnet forward pass finished in %lld mu_s.", (time_finish - time_start));
-    ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv_1 - time_start));
-    ESP_LOGI(TAG, "pool_1 time: %lld mu_s.", (time_pool_1 - time_conv_1));
-    ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv_2 - time_pool_1));
-    ESP_LOGI(TAG, "pool_2 time: %lld mu_s.", (time_pool_2 - time_conv_2));
-    ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv_3 - time_pool_2));
-    ESP_LOGI(TAG, "dense_1 time: %lld mu_s.", (time_dense_1 - time_conv_3));
-    ESP_LOGI(TAG, "category time: %lld mu_s.", (time_category - time_dense_1));
-    ESP_LOGI(TAG, "offset time: %lld mu_s.", (time_finish - time_category));
-
-    if (category->item[0] < threshold) {
-        dl_matrix3d_free(category_f);
-        dl_matrix3d_free(offset_f);
-        return 1;
-    }
-
-    //TODO: Call free as soon as tensors are no longer live
-    dl_matrix3dq_free(out_conv_1);
-    //dl_matrix3dq_free(out_pool_1);
-    dl_matrix3dq_free(out_conv_2);
-    //dl_matrix3dq_free(out_pool_2);
-    dl_matrix3dq_free(out_conv_3);
-    dl_matrix3dq_free(out_dense_1);
-    dl_matrix3dq_free(offset);
-    dl_matrix3dq_free(category);
-
-    return 1;
-}
-
-int onet_lite_q_with_score_verify_esp(dl_matrix3du_t *in, dl_matrix3d_t *category_f, dl_matrix3d_t *offset_f, dl_matrix3d_t *landmark_f, dl_conv_mode mode, float threshold) {
-    int64_t time_start = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_1 = dl_matrix3duq_conv_common(in, &onet_conv2d_kernel1, &onet_conv2d_bias1, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_1);
-    int64_t time_conv_1 = esp_timer_get_time();
-
-    dl_matrix3d_t *mat;
-    dl_matrix3d_t *out_conv_1_f = dl_matrix3d_from_matrixq(out_conv_1);
-    
-    /*printf("\nfirst values of quantized out_conv_1 onet");
-    for (int i = 0; i < 10; i++)
-        printf("%f, ", out_conv_1_f->item[i]);
-    mat = out_conv_1_f;
-    printf("\nout_conv_1_f size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);*/
-
-    dl_matrix3dq_t *out_pool_1 = dl_matrix3dq_pooling(out_conv_1, 3, 3, 3, 3, PADDING_VALID, DL_POOLING_MAX);
-    
-    dl_matrix3d_t *out_pool_1_f = dl_matrix3d_from_matrixq(out_pool_1);
-    /*
-    printf("\nfirst values of quantized out_pool_1 onet");
-    for (int i = 0; i < 10; i++)
-        printf("%f, ", out_pool_1_f->item[i]);
-    mat = out_pool_1_f;
-    printf("\nout_pool_1_f size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);*/
-
-    int64_t time_pool_1 = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_2 = dl_matrix3dqq_conv_common(out_pool_1, &onet_conv2d_kernel2, &onet_conv2d_bias2, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_2);
-
-    dl_matrix3d_t *out_conv_2_f = dl_matrix3d_from_matrixq(out_conv_2);
-    /*printf("\nfirst values of quantized out_conv_2 onet");
-    for (int i = 0; i < 10; i++)
-        printf("%f, ", out_conv_2_f->item[i]);
-    mat = out_conv_2_f;
-    printf("\nout_conv_2_f size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);*/
-
-    int64_t time_conv_2 = esp_timer_get_time();
-    dl_matrix3dq_t *out_pool_2 = dl_matrix3dq_pooling(out_conv_2, 3, 3, 3, 3, PADDING_VALID, DL_POOLING_MAX);
-    
-    dl_matrix3d_t *out_pool_2_f = dl_matrix3d_from_matrixq(out_pool_2);
-    /*printf("\nfirst values of quantized out_pool_2 onet");
-    for (int i = 0; i < 10; i++)
-        printf("%f, ", out_pool_2_f->item[i]);
-    mat = out_pool_2_f;
-    printf("\nout_pool_2_f size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);*/
-
-    int64_t time_pool_2 = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_3 = dl_matrix3dqq_conv_common(out_pool_2, &onet_conv2d_kernel3, &onet_conv2d_bias3, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    dl_matrix3dq_relu(out_conv_3);
-
-    dl_matrix3d_t *out_conv_3_f = dl_matrix3d_from_matrixq(out_conv_3);
-    /*printf("\nfirst values of quantized out_conv_3 onet");
-    for (int i = 0; i < 10; i++)
-        printf("%f, ", out_conv_3_f->item[i]);
-    mat = out_conv_3_f;
-    printf("\nout_conv_3_f size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);*/
-
-    int64_t time_conv_3 = esp_timer_get_time();
-    dl_matrix3dq_t *out_conv_4 = dl_matrix3dqq_conv_common(out_conv_3, &onet_conv2d_kernel4, &onet_conv2d_bias4, 1, 1, PADDING_VALID, EXP_TODO, mode);
-    
-    dl_matrix3d_t *out_conv_4_f = dl_matrix3d_from_matrixq(out_conv_4);
-    /*printf("\nfirst values of quantized out_conv_4 onet");
-    for (int i = 0; i < 10; i++)
-        printf("%f, ", out_conv_4_f->item[i]);
-    mat = out_conv_4_f;
-    printf("\nout_conv_4_f size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);*/
-
-    int64_t time_conv_4 = esp_timer_get_time();
-    //flatten out_conv_4 for matrix multiplication
-    out_conv_4->c = out_conv_4->h*out_conv_4->w*out_conv_4->c;
-    out_conv_4->h = 1;
-    out_conv_4->w = 1;
-    dl_matrix3dq_t *out_dense_1 = dl_matrix3dq_alloc(1, 1, 1, onet_dense_kernel1.h, EXP_TODO);
-    dl_matrix3dqq_fc(out_dense_1, out_conv_4, &onet_dense_kernel1, mode, "out_dense_1");
-    dl_matrix3dq_relu(out_dense_1);
-
-    dl_matrix3d_t *out_dense_1_f = dl_matrix3d_from_matrixq(out_dense_1);
-    /*printf("\nfirst values of quantized out_dense_1 onet");
-    for (int i = 0; i < 10; i++)
-        printf("%f, ", out_dense_1_f->item[i]);
-    mat = out_dense_1_f;
-    printf("\nout_dense_1_f size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);*/
-
-    int64_t time_dense_1 = esp_timer_get_time();
-    dl_matrix3dq_t *category = dl_matrix3dq_alloc(1, 1, 1, onet_dense_kernel2.h, EXP_TODO);
-    dl_matrix3dqq_fc(category, out_dense_1, &onet_dense_kernel2, mode, "category");
-    *category_f = *(dl_matrix3d_from_matrixq(category));
-    dl_matrix3d_softmax(category_f);
-    int64_t time_category = esp_timer_get_time();
-    dl_matrix3dq_t *offset = dl_matrix3dq_alloc(1, 1, 1, onet_dense_kernel3.h, EXP_TODO);
-    dl_matrix3dqq_fc(offset, out_dense_1, &onet_dense_kernel3, mode, "offset");
-    *offset_f = *(dl_matrix3d_from_matrixq(offset));
-    int64_t time_offset = esp_timer_get_time();
-    dl_matrix3dq_t *landmark = dl_matrix3dq_alloc(1, 1, 1, onet_dense_kernel4.h, EXP_TODO);
-    dl_matrix3dqq_fc(landmark, out_dense_1, &onet_dense_kernel4, mode, "landmark");
-    *landmark_f = *(dl_matrix3d_from_matrixq(landmark));
-    int64_t time_finish = esp_timer_get_time();
-
-    printf("\nvalues of offset onet_lite_q_with_score_verify_esp output");
-        for (int i = 0; i < 4; i++)
-            printf("%f, ", offset_f->item[i]);
-    mat = offset_f;
-    printf("\noffset_f size (nhwc): %d, %d, %d, %d", mat->n, mat->h, mat->w, mat->c);
-
-    ESP_LOGI(TAG, "onet forward pass finished in %lld mu_s.", (time_finish - time_start));
-    ESP_LOGI(TAG, "conv_1 time: %lld mu_s.", (time_conv_1 - time_start));
-    ESP_LOGI(TAG, "pool_1 time: %lld mu_s.", (time_pool_1 - time_conv_1));
-    ESP_LOGI(TAG, "conv_2 time: %lld mu_s.", (time_conv_2 - time_pool_1));
-    ESP_LOGI(TAG, "pool_2 time: %lld mu_s.", (time_pool_2 - time_conv_2));
-    ESP_LOGI(TAG, "conv_3 time: %lld mu_s.", (time_conv_3 - time_pool_2));
-    ESP_LOGI(TAG, "conv_4 time: %lld mu_s.", (time_conv_4 - time_conv_3));
-    ESP_LOGI(TAG, "dense_1 time: %lld mu_s.", (time_dense_1 - time_conv_4));
-    ESP_LOGI(TAG, "category time: %lld mu_s.", (time_category - time_dense_1));
-    ESP_LOGI(TAG, "offset time: %lld mu_s.", (time_offset - time_category));
-    ESP_LOGI(TAG, "landmark time: %lld mu_s.", (time_finish - time_offset));
-
-    if (category->item[0] < threshold) {
-        dl_matrix3d_free(category_f);
-        dl_matrix3d_free(offset_f);
-        dl_matrix3d_free(landmark_f);
-        return 1;
-    }
-
-    //TODO: Call free as soon as tensors are no longer live
-    dl_matrix3dq_free(out_conv_1);
-    //dl_matrix3dq_free(out_pool_1);
-    dl_matrix3dq_free(out_conv_2);
-    //dl_matrix3dq_free(out_pool_2);
-    dl_matrix3dq_free(out_conv_3);
-    dl_matrix3dq_free(out_dense_1);
-    dl_matrix3dq_free(offset);
-    dl_matrix3dq_free(category);
-    dl_matrix3dq_free(landmark);
-
-    return 1;
-}
-#endif
 #endif
 
 #endif

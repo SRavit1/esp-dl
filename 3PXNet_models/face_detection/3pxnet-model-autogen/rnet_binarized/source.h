@@ -60,12 +60,12 @@ static pckDtype l4act_bin[F4I/pckWdt];
 #define F5NPI  0
 #define F5O  2
 static pckDtype l5wght[] = _78 ;
-static pckDtype l5act_bin[F4O/pckWdt]; 
+static pckDtype l5act_bin[1]; 
 #define F6I  128
 #define F6NPI  0
 #define F6O  4
 static pckDtype l6wght[] = _79 ;
-static pckDtype l6act_bin[F5O/pckWdt]; 
+static pckDtype l6act_bin[1]; 
 static float output[10]; 
 static pckDtype bn1thr[] = bn1_thresh ; 
 static pckDtype bn1sign[] = bn1_sign ; 

@@ -65,6 +65,7 @@ mtmn_net_t *onet_lite_f_with_score_verify_custom(dl_matrix3du_t *in, float thres
     dl_matrix3d_t *category=dl_matrix3d_alloc(1, 1, 1, 2), *offset=dl_matrix3d_alloc(1, 1, 1, 4), *landmark=dl_matrix3d_alloc(1, 1, 1, 10);
     onet_lite_f_with_score_verify_esp(in, category, offset, landmark);
 
+    //TODO: Comments added by Ravit due to bug; please remove
     if (category->item[0] < threshold) {
         dl_matrix3d_free(category);
         dl_matrix3d_free(offset);
@@ -72,10 +73,11 @@ mtmn_net_t *onet_lite_f_with_score_verify_custom(dl_matrix3du_t *in, float thres
         return 0;
     }
 
-    mtmn_net_t *result = (mtmn_net_t*) dl_lib_calloc(1, sizeof *result, 0);
+    /*mtmn_net_t *result = (mtmn_net_t*) dl_lib_calloc(1, sizeof *result, 0);
     result->category = category;
     result->offset = offset;
     result->landmark = landmark;
 
-    return result;
+    return result;*/
+    return NULL;
 }

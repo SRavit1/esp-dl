@@ -2,7 +2,7 @@ set(COMPONENT_SRCS
     app_main.cpp
     app_facenet.c
     app_camera.cpp
-    facenet_full_prec_qu.c
+    facenet_full_prec.c
     fd_forward.c
     ../3pxnet-inference-library/3pxnet/3pxnet_cn.c
     ../3pxnet-inference-library/3pxnet/3pxnet_fc.c
