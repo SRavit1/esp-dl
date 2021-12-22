@@ -1,0 +1,32 @@
+#include <stdio.h>
+#include "3pxnet_util.h"
+
+/*
+ * input - pckDtype array of n*pckWidth/32 elements
+ * output - int array of n elements
+ * n - number of elements in output
+ */
+int pckDtype_to_int(pckDtype* input, int* output, int n, int pckWidth, int bitwidth) {
+	for (int i = 0; i < n; i++) {
+		int32_t pckVal = input[i/(pckWidth/bitwidth)] & (0b11 << (pckWidth - (i % (pckWidth/bitwidth))*bitwdith));
+		output[i] = 0;
+		int placeVal = 1;
+		for (int i = 0; i < bitwidth; i++) {
+			output[i] += ((pckVal & 0b1) == 0b0) ? val*-1 : val;
+			pckVal  = pckVal >> 1;
+			placeVal *= 2;
+		}
+	}
+	return 0;
+}
+
+int int_to_pckDtype(int* input, pckDtype* output, int n, int pckWidth, int bitwidth) {
+	return 0;
+}
+
+int print_int_array(int* input, int n) {
+	for (int i = 0; i < n; i++)
+		printf("%d, ", input[i]);
+	printf("\n");
+	return 0;
+}
