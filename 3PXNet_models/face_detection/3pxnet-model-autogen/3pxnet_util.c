@@ -27,17 +27,23 @@ int pckDtype_to_int(pckDtype* input, int* output, int n, int pckWidth, int btwdt
  * output - int array of n elements
  * n - number of elements in output
  */
-int pckDtype_to_int(pckDtype* input, int* output, int n, int pckWidth, int btwdt) {
+int pckDtype_to_int_var_bits(pckDtype* input, int* output, int n, int pckWidth, int btwdt, int bits) {
+	if (bits > pckWidth) return 1;
 	for (int i = 0; i < n; i++) {
 		output[i] = 0;
 		int placeVal = 1;
 		for (int j = btwdt-1; j >= 0; j--) {
-			int pckVal = input[(i/pckWidth)*btwdt+j] & (0b1 << (pckWidth -1 - (i % pckWidth)));
+			//int pckVal = input[(i/pckWidth)*btwdt+j] & (0b1 << (pckWidth -1 - (i % pckWidth)));
+			int pckVal = input[(i/bits)*btwdt+j] & (0b1 << (bits -1 - (i % bits)));
 			output[i] += (pckVal == 0b0) ? placeVal*-1 : placeVal;
 			placeVal *= 2;
 		}
 	}
 	return 0;
+}
+
+int pckDtype_to_int(pckDtype* input, int* output, int n, int pckWidth, int btwdt) {
+	return pckDtype_to_int_var_bits(input, output, n, pckWidth, btwdt, pckWidth);
 }
 
 int int_to_pckDtype(int* input, pckDtype* output, int n, int pckWidth, int btwdt) {

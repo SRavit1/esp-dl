@@ -28,6 +28,7 @@
 #include "bn1.h" 
 #include "bn2.h" 
 #include "bn3.h" 
+#include "bn4.h" 
 #include "image.h"
 static int8_t l1_act[] = IMAGES ; 
 static uint8_t   labels[] = LABELS; 
@@ -37,7 +38,8 @@ static uint8_t   labels[] = LABELS;
 #define C1KZ 32
 #define C1PD 0
 #define C1PL 3
-static int8_t l1wght[] = _85 ;
+//static int8_t l1wght[] = _85 ;
+static pckDtype l1wght[] = _85 ;
 #define C2KXY 3
 #define C2XY ((2*C1PD+C1XY-C1KXY+1)/C1PL) 
 #define C2Z 32
@@ -92,10 +94,196 @@ static pckDtype bn2offset[] = bn2_offset ;
 static pckDtype bn3thr[] = bn3_thresh ; 
 static pckDtype bn3sign[] = bn3_sign ; 
 static pckDtype bn3offset[] = bn3_offset ; 
-static bnDtype bn4mean[] = _bn8_running_mean ; 
-static bnDtype bn4var[] = _bn8_running_var ; 
-static bnDtype bn4gamma[] = _bn8_weight ; 
-static bnDtype bn4beta[] = _bn8_bias ; 
+static pckDtype bn4thr[] = bn4_thresh ; 
+static pckDtype bn4sign[] = bn4_sign ; 
+static pckDtype bn4offset[] = bn4_offset ; 
+static bnDtype bn8mean[] = _bn8_running_mean ; 
+static bnDtype bn8var[] = _bn8_running_var ; 
+static bnDtype bn8gamma[] = _bn8_weight ; 
+static bnDtype bn8beta[] = _bn8_bias ; 
+
+/*
+ * @details unrolls depth-width-height pAct into Im2Col vector where each
+ * Does not support unrolling with padding.
+ * Only works when one filter can fit into a pack (i.e. CKX*CKY*CZ <= pckWdt)
+ *
+ * find value of bit
+ */
+int unRollActivations_old(pckDtype* __restrict pAct, const uint16_t CX, const uint16_t CY, const uint16_t CZ, const uint16_t  CKX, const uint16_t CKY, const uint8_t in_bit, pckDtype* __restrict pActUnrolled) {
+	//we cannot handle the case where the filter does not fit into one pack
+	if (CKX*CKY*CZ > pckWdt) return 1;
+
+	//pAct coefficients
+	uint16_t yCoeff = CX*in_bit;
+	uint16_t xCoeff = in_bit;
+	//keeping track of which output activation pack we are in
+	uint16_t pActUnrolled_index = 0;
+	for (uint16_t y = 0; y < CY-CKY+1; y++) {
+		for (uint16_t x = 0; x < CX-CKX+1; x++) {
+			for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+				//move to next row of pActUnrolled
+				pckDtype *current_pack = (pActUnrolled + pActUnrolled_index++);
+				*current_pack = 0;
+				for (uint8_t z = 0; z < CZ; z++) {
+					for (uint8_t yy = 0; yy < CKY; yy++) {
+						for (uint8_t xx = 0; xx < CKX; xx++) {
+							//Note: We know CZ <= 32 since CKX*CKY*CZ <= 32
+							//So, we know that the activations for a given x, y slice are in 1 pack
+							//printf("y %d, yy %d, x %d, xx %d, bitw %d, total offset %d, pAct theoretical length %d\n", y, yy, x, xx, bitw, (y+yy)*yCoeff+(x+xx)*xCoeff+bitw, C1XY*C1XY*in_bit);
+							const pckDtype bit = (*(pAct+(y+yy)*yCoeff+(x+xx)*xCoeff+bitw)&(1<<z))>>z;
+							*current_pack = (*current_pack<<1) | bit;
+						}
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+void unRollActivations(pckDtype* __restrict pActRolled, pckDtype* __restrict pAct, //pckDtype* __restrict pKrn,
+	const uint16_t dpth, const uint16_t wdth, const uint16_t hght,
+	const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum,
+    const uint16_t pad, const uint16_t pool,
+    //pckDtype* __restrict pOut, pckDtype* __restrict thresh, pckDtype* sign, pckDtype* __restrict offset,
+    uint8_t in_bit) {
+    
+	int count_pInSet = 0;
+
+    // Input counter
+    uint16_t inCnt = dpth;
+    // Output counter
+    uint16_t outCnt = knum;
+    // Activations
+    //pckDtype* pWgt = pKrn;
+    pckDtype* pIn = pAct;
+    // temporary output value (before binarization)
+    uint32_t xnorTemp[in_bit];
+    int32_t  outTemp[in_bit];
+    //int32_t pckTemp[out_bit];
+    int out = 0;
+    uint8_t packing_num = kwdt * khgt * kdpt;
+    uint16_t  yCoeff = wdth * in_bit;
+    uint16_t  xCoeff = in_bit;
+    uint16_t  kCoeff = khgt * kwdt * kdpt;
+    // Packing/shifting  index
+    uint8_t pckIdx = pckWdt - 1;
+    /*pckDtype* threshLoc = thresh;
+    pckDtype* signLoc = sign;
+    pckDtype* offsetLoc = offset;*/
+    //memset(pckTemp, 0, sizeof(int32_t) * out_bit);
+    int max_temp = 0x80000000;
+    int mask_pad = 0;
+    for (int y = 0; y < (hght + 2 * pad - khgt + 1)/pool; y++) {
+        for (int x = 0; x < (wdth + 2 * pad - kwdt + 1)/pool; x++) {  
+            outCnt = knum;
+            /*threshLoc = thresh;
+            signLoc = sign;
+            offsetLoc = offset;*/
+            while (outCnt) {
+                max_temp = 0x80000000;
+                for (int yy = 0; yy < pool; yy++) {
+                    for (int xx = 0; xx < pool; xx++) {
+                        //pWgt = pKrn;
+                        //comment placeholder
+                        mask_pad = mask(27);
+                        packing_num = khgt * kwdt;
+                        memset(outTemp, 0, in_bit * sizeof(int32_t));
+                        out = 0;
+                        inCnt = dpth;
+                        
+                        pIn = pAct + (y * pool + yy) * yCoeff + (x * pool + xx)* xCoeff;
+                       	
+                       	//ADD BY RAVIT
+                       	//pIn corresponds to input region of size CKX x CKY x CZ with
+                       	//	top-left corner at x=(x*pool+xx), y=(y*pool+yy)
+						uint16_t yCoeff_orig = wdth*in_bit;
+						uint16_t xCoeff_orig = in_bit;
+						for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+							*pIn = 0;
+							//for (uint8_t z = 0; z < CZ; z++) {
+							for (uint8_t z = 0; z < dpth; z++) {
+								//for (uint8_t yy_kernel = 0; yy_kernel < CKY; yy_kernel++) {
+								for (uint8_t yy_kernel = 0; yy_kernel < khgt; yy_kernel++) {
+									//for (uint8_t xx_kernel = 0; xx_kernel < CKX; xx_kernel++) {
+									for (uint8_t xx_kernel = 0; xx_kernel < kwdt; xx_kernel++) {
+										//todo: xCoeff_orig, yCoeff_orig, x_orig, y_orig
+										uint8_t x_orig = x*pool + xx;
+										uint8_t y_orig = y*pool + yy;
+										//const pckDtype bit = (*(pActRolled+(y_orig+yy_kernel)*yCoeff_orig+(x_orig+xx_kernel)*xCoeff_orig+bitw)&(1<<z))>>z;
+										uint16_t pActRolled_offset = (y_orig+yy_kernel)*yCoeff_orig+(x_orig+xx_kernel)*xCoeff_orig+bitw;
+										const pckDtype bit = (*(pActRolled+pActRolled_offset)&(1<<z))>>z;
+										*pIn = (*pIn<<1) | bit;
+									}
+								}
+							}
+							pIn++;
+							count_pInSet++;
+						}
+						//resetting to original value
+						pIn = pAct + (y * pool + yy) * yCoeff + (x * pool + xx)* xCoeff;
+                       	//ADD BY RAVIT
+                        
+                        /*pWgt = pKrn + (knum - outCnt);
+                        //while (inCnt) {
+                        for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                            // XNOR multiplication
+                            xnorTemp[bitw] = (~(*pIn++ ^ *pWgt) & mask_pad);
+                            // popcount//Accummulate
+                            outTemp[bitw] += popcount(xnorTemp[bitw]);
+                        }
+                        //pWgt++;
+                        //}
+                        //pAct -= in_bit * dpth;
+                        int8_t packing_offset = pckWdt - packing_num;
+                        for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+                            // Adjust the output value
+                            outTemp[bitw] = outTemp[bitw] - (dpth * pckWdt - outTemp[bitw]);
+                            // Get the int full precision value 
+                            outTemp[bitw] += packing_offset * dpth;
+                            out += (outTemp[bitw] << (in_bit - bitw - 1));
+                        }
+                        if (out > max_temp) {
+                            max_temp = out;
+                        }*/                        
+                    }
+                    //printf("\n");
+                    //pAct += in_bit * dpth;
+                }
+                /*
+                // Quantization
+                int int_part = max_temp >> (in_bit) << (16);/// pow(2, in_bit);
+                int frac_part = (mask(in_bit) & max_temp) << (16 - in_bit);
+                //float w = out / 4.0;
+                //printf("%.2f, ", w);
+                //temp = (temp & out) << (16 - in_bit);
+                int out_temp = int_part + frac_part;
+                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                    int temp = out_temp > *threshLoc;
+                    // Shift 
+                    pckTemp[bitw] |= (temp << (pckIdx));
+                    out_temp = (temp ^ (1 & ((*signLoc) >> (pckIdx))) ? out_temp + ((*offsetLoc) >> (bitw + 1)) : out_temp - ((*offsetLoc) >> (bitw + 1)));
+                }
+                threshLoc++;
+                offsetLoc++;
+                // Full output block - write out
+                if (pckIdx == 0) {
+                    for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
+                        *pOut++ = ~(pckTemp[bitw] ^ (*signLoc));
+                    }
+                    signLoc++;
+                    pckIdx = pckWdt - 1;
+                    memset(pckTemp, 0, sizeof(int32_t) * out_bit);
+                }
+                else {
+                    pckIdx--;
+                }*/
+                outCnt--;
+            }            
+        }
+    }
+    printf("pIn set %d times\n", count_pInSet);
+}
 
 
 int main(){ 
@@ -107,7 +295,7 @@ int main(){
 	print_int_array(intTest, 32);
 	*/
 
-	testlayer3();
+	testlayer1();
 
 	/*
 	int res;
@@ -123,49 +311,6 @@ int main(){
 
 
 /*
-int testlayer() {
-	const int input_bw = 2;
-	const int output_bw = 2;
-
-	uint16_t input_Z=32, input_XY=5, weight_Z=32, weight_XY=2, weight_KZ=32;
-	int input_act_len = input_Z*input_XY*input_XY*input_bw;
-	int wght_len = weight_Z*weight_XY*weight_XY*weight_KZ;
-	int output_act_len = weight_KZ*(input_XY-weight_XY+1)*(input_XY-weight_XY+1)*output_bw;
-	pckDtype input_act_bin[(int) ceil(input_act_len*1.0/pckWdt)];
-	pckDtype wght[(int) ceil(wght_len*1.0/pckWdt)];
-	pckDtype output_act_bin[(int) ceil(output_act_len*1.0/pckWdt)];
-
-	//for (unsigned int i = 0; i < ceil(input_act_len*1.0/pckWdt); i++)
-	for (unsigned int i = 0; i < sizeof(input_act_bin)/sizeof(pckDtype); i++)
-		input_act_bin[i] = 0; //-1;
-	int input_act_int[input_act_len];
-	pckDtype_to_int(input_act_bin, input_act_int, input_act_len, pckWdt, input_bw);
-	printf("input values (cwhn): ");
-	print_int_array(input_act_int, 32);
-
-	//for (unsigned int i = 0; i < ceil(wght_len*1.0/pckWdt); i++)
-	for (unsigned int i = 0; i < sizeof(wght)/sizeof(pckDtype); i++)
-		wght[i] = -1; //0xaaaaaaaa;
-	int wght_int[wght_len];
-	pckDtype_to_int(wght, wght_int, wght_len, pckWdt, 1);
-	printf("weight values (nhwc): ");
-	print_int_array(wght_int, 32);
-
-	int res = CnXnorWrap(input_act_bin, wght, input_Z, input_XY, input_XY, weight_Z, weight_XY, weight_XY, weight_KZ, output_act_bin, 0, 1, NULL, NULL, NULL, input_bw, output_bw); //multibit
-	//int res = CnXnorWrap(input_act_bin, wght, input_Z, input_XY, input_XY, weight_Z, weight_XY, weight_XY, weight_KZ, output_act_bin, 0, 1, NULL, NULL, NULL); //original
-	printf("res is %d\n", res);
-	
-	int output_act_int[output_act_len];
-	pckDtype_to_int(output_act_bin, output_act_int, output_act_len, pckWdt, output_bw);
-	printf("output values (nhwc): ");
-	print_int_array(output_act_int, 32);
-
-	int count = 0;
-	for (int i = 0; i < output_act_len; i++)
-		if (output_act_int[i] >= 0) count++;
-	printf("output count of nonnegative %d/%d\n", count, output_act_len);
-}
-
 int testlayer1() {
 	const int input_bw = 2;
 	const int output_bw = 1;
@@ -204,6 +349,101 @@ int testlayer1() {
 	print_int_array(l2act_bin_int, 10);
 }
 */
+
+int testlayer1() {
+	const int input_bw = 2;
+	const int output_bw = 1;
+
+	//uint8_t *curr_im = l1_act;
+	const int l1act_len = (int) (1*C1Z*C1XY*C1XY);
+	const int l1act_len_pck = (int) (C1XY*C1XY*((int) ceil(C1Z*1./pckWdt))*input_bw);//(int) ceil(1.0*l1act_len*input_bw/pckWdt);
+
+	pckDtype l1act_bin[l1act_len_pck];
+	for (unsigned int i = 0; i < l1act_len_pck; i++)
+		l1act_bin[i] = -1; //0xaaaaaaaa;
+	int l1act_int[l1act_len];
+	pckDtype_to_int(l1act_bin, l1act_int, l1act_len, pckWdt, input_bw);	
+	printf("input values (cwhn): ");
+	print_int_array(l1act_int, 32);
+
+	const int l1act_bin_unrolled_len = (C1XY-C1KXY+1)*(C1XY-C1KXY+1)*input_bw;
+	printf("l1act_bin_unrolled_len %d\n", l1act_bin_unrolled_len);
+	pckDtype l1act_bin_unrolled[l1act_bin_unrolled_len];
+	//unRollActivations_old(l1act_bin, C1XY, C1XY, C1Z, C1KXY, C1KXY, input_bw,l1act_bin_unrolled);
+	unRollActivations(l1act_bin, l1act_bin_unrolled, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, input_bw);
+
+	//manually setting unrolled input values
+	/*for (int i = 0; i < 4314; i++)
+		l1act_bin_unrolled[i] = 0x07ffffff;*/
+
+	int l1wght_len = C1Z*C1KXY*C1KXY*C1KZ;
+	int l1wght_int[l1wght_len];
+	pckDtype_to_int_var_bits(l1wght, l1wght_int, l1wght_len, pckWdt, 1, 27);
+	printf("parameter values (nhwc): ");
+	print_int_array(l1wght_int, 32);
+	int count = 0;
+	for (int i = 0; i < l1wght_len; i++)
+		if (l1wght_int[i] >= 0) count++;
+	printf("param count of nonnegative %d/%d\n", count, l1wght_len);
+	printf("C1Z %u C1XY %u C1XY %u C1Z %u C1KXY %u C1KXY %u C1KZ %u C1PD  %u C1PL %u\n", C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL);
+
+	//CnBnMulti(l1act_bn, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, NULL,NULL,NULL,2,1);
+	CnBnMulti(l1act_bin_unrolled, l1wght, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, l2act_bin, bn1thr,bn1sign,bn1offset,2,1);
+	
+	int l2act_len = C2XY*C2XY*C2Z;
+	int l2act_int[l2act_len];
+	pckDtype_to_int(l2act_bin, l2act_int, l2act_len, pckWdt, output_bw);
+	printf("output values (nhwc): ");
+	print_int_array(l2act_int, 128);
+
+	count = 0;
+	for (int i = 0; i < l2act_len; i++)
+		if (l2act_int[i] >= 0) count++;
+	printf("output count of nonnegative %d/%d\n", count, l2act_len);
+}
+
+int testlayer2() {
+	const int input_bw = 1;
+	const int output_bw = 1;
+
+	//uint8_t *curr_im = l1_act;
+	const int l2act_len = (int) (1*C2Z*C2XY*C2XY);
+	const int l2act_len_pck = (int) ceil(1.0*l2act_len*input_bw/pckWdt);
+
+	//pckDtype l2act_bin[l2act_len_pck]; //defined above
+	for (unsigned int i = 0; i < l2act_len_pck; i++)
+		l2act_bin[i] = -1; //0xaaaaaaaa;
+	int l2act_int[l2act_len];
+	pckDtype_to_int(l2act_bin, l2act_int, l2act_len, pckWdt, input_bw);
+	printf("input values (cwhn): ");
+	print_int_array(l2act_int, 32);
+
+	int l2wght_len = C2Z*C2KXY*C2KXY*C2KZ;
+	int l2wght_int[l2wght_len];
+	pckDtype_to_int(l2wght, l2wght_int, l2wght_len, pckWdt, 1);
+	printf("parameter values (nhwc): ");
+	print_int_array(l2wght_int, 10);
+	int count = 0;
+	for (int i = 0; i < l2wght_len; i++)
+		if (l2wght_int[i] >= 0) count++;
+	printf("param count of nonnegative %d/%d\n", count, l2wght_len);
+	printf("C2Z %u C2XY %u C2XY %u C2Z %u C2KXY %u C2KXY %u C2KZ %u C2PD  %u C2PL %u\n", C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, C2PD, C2PL);
+
+	int res;
+	//res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, NULL, NULL,NULL,1,1);
+	res = CnXnorWrap(l2act_bin, l2wght, C2Z, C2XY, C2XY, C2Z, C2KXY, C2KXY, C2KZ, l3act_bin, C2PD, C2PL, bn2thr, bn2sign,bn2offset,1,1);
+	
+	int l3act_len = C3XY*C3XY*C3Z;
+	int l3act_int[l3act_len];
+	pckDtype_to_int(l3act_bin, l3act_int, l3act_len, pckWdt, output_bw);
+	printf("output values (nhwc): ");
+	print_int_array(l3act_int, 128);
+
+	count = 0;
+	for (int i = 0; i < l3act_len; i++)
+		if (l3act_int[i] >= 0) count++;
+	printf("output count of nonnegative %d/%d\n", count, l3act_len);
+}
 
 int testlayer3() {
 	const int input_bw = 1;
@@ -246,4 +486,47 @@ int testlayer3() {
 	for (int i = 0; i < l4act_len; i++)
 		if (l4act_int[i] >= 0) count++;
 	printf("output count of nonnegative %d/%d\n", count, l4act_len);
+}
+
+int testlayer4() {
+	const int input_bw = 1;
+	const int output_bw = 1;
+
+	//uint8_t *curr_im = l1_act;
+	const int l4act_len = (int) (1*C4Z*C4XY*C4XY);
+	const int l4act_len_pck = (int) ceil(1.0*l4act_len*input_bw/pckWdt);
+
+	//pckDtype l2act_bin[l2act_len_pck]; //defined above
+	for (unsigned int i = 0; i < l4act_len_pck; i++)
+		l4act_bin[i] = -1; //0xaaaaaaaa;
+	int l4act_int[l4act_len];
+	pckDtype_to_int(l4act_bin, l4act_int, l4act_len, pckWdt, input_bw);
+	printf("input values (cwhn): ");
+	print_int_array(l4act_int, 32);
+
+	int l4wght_len = C4Z*C4KXY*C4KXY*C4KZ;
+	int l4wght_int[l4wght_len];
+	pckDtype_to_int(l4wght, l4wght_int, l4wght_len, pckWdt, 1);
+	printf("parameter values (nhwc): ");
+	print_int_array(l4wght_int, 10);
+	int count = 0;
+	for (int i = 0; i < l4wght_len; i++)
+		if (l4wght_int[i] >= 0) count++;
+	printf("param count of nonnegative %d/%d\n", count, l4wght_len);
+	printf("C4Z %u C4XY %u C4XY %u C4Z %u C4KXY %u C4KXY %u C4KZ %u C4PD  %u C4PL %u\n", C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, C4PD, C4PL);
+
+	int res;
+	//res = CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, NULL, NULL,NULL,1,1);
+	res = CnXnorWrap(l4act_bin, l4wght, C4Z, C4XY, C4XY, C4Z, C4KXY, C4KXY, C4KZ, l5act_bin, C4PD, C4PL, bn4thr, bn4sign,bn4offset,1,1);
+	
+	int l5act_len = F5I;
+	int l5act_int[l5act_len];
+	pckDtype_to_int(l5act_bin, l5act_int, l5act_len, pckWdt, output_bw);
+	printf("output values (nhwc): ");
+	print_int_array(l5act_int, 64);
+
+	count = 0;
+	for (int i = 0; i < l5act_len; i++)
+		if (l5act_int[i] >= 0) count++;
+	printf("output count of nonnegative %d/%d\n", count, l5act_len);
 }
