@@ -103,186 +103,47 @@ static bnDtype bn8gamma[] = _bn8_weight ;
 static bnDtype bn8beta[] = _bn8_bias ; 
 
 /*
- * @details unrolls depth-width-height pAct into Im2Col vector where each
- * Does not support unrolling with padding.
- * Only works when one filter can fit into a pack (i.e. CKX*CKY*CZ <= pckWdt)
- *
- * find value of bit
+ * @details unrolls depth-width-height pAct into Im2Col vector used by CnBnMulti function
+ * Only works when one filter can fit into a single pack (i.e. CKX*CKY*CZ <= pckWdt)
  */
-int unRollActivations_old(pckDtype* __restrict pAct, const uint16_t CX, const uint16_t CY, const uint16_t CZ, const uint16_t  CKX, const uint16_t CKY, const uint8_t in_bit, pckDtype* __restrict pActUnrolled) {
-	//we cannot handle the case where the filter does not fit into one pack
-	if (CKX*CKY*CZ > pckWdt) return 1;
-
-	//pAct coefficients
-	uint16_t yCoeff = CX*in_bit;
-	uint16_t xCoeff = in_bit;
-	//keeping track of which output activation pack we are in
-	uint16_t pActUnrolled_index = 0;
-	for (uint16_t y = 0; y < CY-CKY+1; y++) {
-		for (uint16_t x = 0; x < CX-CKX+1; x++) {
-			for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
-				//move to next row of pActUnrolled
-				pckDtype *current_pack = (pActUnrolled + pActUnrolled_index++);
-				*current_pack = 0;
-				for (uint8_t z = 0; z < CZ; z++) {
-					for (uint8_t yy = 0; yy < CKY; yy++) {
-						for (uint8_t xx = 0; xx < CKX; xx++) {
-							//Note: We know CZ <= 32 since CKX*CKY*CZ <= 32
-							//So, we know that the activations for a given x, y slice are in 1 pack
-							//printf("y %d, yy %d, x %d, xx %d, bitw %d, total offset %d, pAct theoretical length %d\n", y, yy, x, xx, bitw, (y+yy)*yCoeff+(x+xx)*xCoeff+bitw, C1XY*C1XY*in_bit);
-							const pckDtype bit = (*(pAct+(y+yy)*yCoeff+(x+xx)*xCoeff+bitw)&(1<<z))>>z;
-							*current_pack = (*current_pack<<1) | bit;
-						}
-					}
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-void unRollActivations(pckDtype* __restrict pActRolled, pckDtype* __restrict pAct, //pckDtype* __restrict pKrn,
-	const uint16_t dpth, const uint16_t wdth, const uint16_t hght,
-	const uint16_t kdpt, const uint16_t kwdt, const uint16_t khgt, const uint16_t knum,
-    const uint16_t pad, const uint16_t pool,
-    //pckDtype* __restrict pOut, pckDtype* __restrict thresh, pckDtype* sign, pckDtype* __restrict offset,
-    uint8_t in_bit) {
+void unRollActivations(pckDtype* __restrict pActRolled, pckDtype* __restrict pAct, const uint16_t dpth,
+		const uint16_t wdth, const uint16_t hght, const uint16_t kwdt,
+		const uint16_t khgt, const uint16_t pad, const uint16_t pool, const uint8_t in_bit) {
     
-	int count_pInSet = 0;
+	pckDtype* pIn = pAct;
+    const uint16_t  yCoeff = wdth * in_bit;
+    const uint16_t  xCoeff = in_bit;
 
-    // Input counter
-    uint16_t inCnt = dpth;
-    // Output counter
-    uint16_t outCnt = knum;
-    // Activations
-    //pckDtype* pWgt = pKrn;
-    pckDtype* pIn = pAct;
-    // temporary output value (before binarization)
-    uint32_t xnorTemp[in_bit];
-    int32_t  outTemp[in_bit];
-    //int32_t pckTemp[out_bit];
-    int out = 0;
-    uint8_t packing_num = kwdt * khgt * kdpt;
-    uint16_t  yCoeff = wdth * in_bit;
-    uint16_t  xCoeff = in_bit;
-    uint16_t  kCoeff = khgt * kwdt * kdpt;
-    // Packing/shifting  index
-    uint8_t pckIdx = pckWdt - 1;
-    /*pckDtype* threshLoc = thresh;
-    pckDtype* signLoc = sign;
-    pckDtype* offsetLoc = offset;*/
-    //memset(pckTemp, 0, sizeof(int32_t) * out_bit);
-    int max_temp = 0x80000000;
-    int mask_pad = 0;
+	const uint16_t yCoeff_rolled = wdth*in_bit;
+	const uint16_t xCoeff_rolled = in_bit;
     for (int y = 0; y < (hght + 2 * pad - khgt + 1)/pool; y++) {
-        for (int x = 0; x < (wdth + 2 * pad - kwdt + 1)/pool; x++) {  
-            outCnt = knum;
-            /*threshLoc = thresh;
-            signLoc = sign;
-            offsetLoc = offset;*/
-            while (outCnt) {
-                max_temp = 0x80000000;
-                for (int yy = 0; yy < pool; yy++) {
-                    for (int xx = 0; xx < pool; xx++) {
-                        //pWgt = pKrn;
-                        //comment placeholder
-                        mask_pad = mask(27);
-                        packing_num = khgt * kwdt;
-                        memset(outTemp, 0, in_bit * sizeof(int32_t));
-                        out = 0;
-                        inCnt = dpth;
-                        
-                        pIn = pAct + (y * pool + yy) * yCoeff + (x * pool + xx)* xCoeff;
-                       	
-                       	//ADD BY RAVIT
-                       	//pIn corresponds to input region of size CKX x CKY x CZ with
-                       	//	top-left corner at x=(x*pool+xx), y=(y*pool+yy)
-						uint16_t yCoeff_orig = wdth*in_bit;
-						uint16_t xCoeff_orig = in_bit;
-						for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
-							*pIn = 0;
-							//for (uint8_t z = 0; z < CZ; z++) {
-							for (uint8_t z = 0; z < dpth; z++) {
-								//for (uint8_t yy_kernel = 0; yy_kernel < CKY; yy_kernel++) {
-								for (uint8_t yy_kernel = 0; yy_kernel < khgt; yy_kernel++) {
-									//for (uint8_t xx_kernel = 0; xx_kernel < CKX; xx_kernel++) {
-									for (uint8_t xx_kernel = 0; xx_kernel < kwdt; xx_kernel++) {
-										//todo: xCoeff_orig, yCoeff_orig, x_orig, y_orig
-										uint8_t x_orig = x*pool + xx;
-										uint8_t y_orig = y*pool + yy;
-										//const pckDtype bit = (*(pActRolled+(y_orig+yy_kernel)*yCoeff_orig+(x_orig+xx_kernel)*xCoeff_orig+bitw)&(1<<z))>>z;
-										uint16_t pActRolled_offset = (y_orig+yy_kernel)*yCoeff_orig+(x_orig+xx_kernel)*xCoeff_orig+bitw;
-										const pckDtype bit = (*(pActRolled+pActRolled_offset)&(1<<z))>>z;
-										*pIn = (*pIn<<1) | bit;
-									}
+        for (int x = 0; x < (wdth + 2 * pad - kwdt + 1)/pool; x++) {
+            for (int yy = 0; yy < pool; yy++) {
+                for (int xx = 0; xx < pool; xx++) {
+                    uint16_t pIn_offset = (y * pool + yy) * yCoeff + (x * pool + xx)* xCoeff;
+                    pIn = pAct + pIn_offset;
+                   	
+                   	//pIn corresponds to input region of size CKX x CKY x CZ with
+                   	//	top-left corner at x=(x*pool+xx), y=(y*pool+yy)
+					for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
+						*pIn = 0;
+						for (uint8_t z = 0; z < dpth; z++) {
+							for (uint8_t yy_kernel = 0; yy_kernel < khgt; yy_kernel++) {
+								for (uint8_t xx_kernel = 0; xx_kernel < kwdt; xx_kernel++) {
+									const uint8_t x_rolled = x*pool + xx;
+									const uint8_t y_rolled = y*pool + yy;
+									const uint16_t pActRolled_offset = (y_rolled+yy_kernel)*yCoeff_rolled+(x_rolled+xx_kernel)*xCoeff_rolled+bitw;
+									const pckDtype bit = (*(pActRolled+pActRolled_offset)&(1<<z))>>z;
+									*pIn = (*pIn<<1) | bit;
 								}
 							}
-							pIn++;
-							count_pInSet++;
 						}
-						//resetting to original value
-						pIn = pAct + (y * pool + yy) * yCoeff + (x * pool + xx)* xCoeff;
-                       	//ADD BY RAVIT
-                        
-                        /*pWgt = pKrn + (knum - outCnt);
-                        //while (inCnt) {
-                        for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
-                            // XNOR multiplication
-                            xnorTemp[bitw] = (~(*pIn++ ^ *pWgt) & mask_pad);
-                            // popcount//Accummulate
-                            outTemp[bitw] += popcount(xnorTemp[bitw]);
-                        }
-                        //pWgt++;
-                        //}
-                        //pAct -= in_bit * dpth;
-                        int8_t packing_offset = pckWdt - packing_num;
-                        for (uint8_t bitw = 0; bitw != in_bit; bitw++) {
-                            // Adjust the output value
-                            outTemp[bitw] = outTemp[bitw] - (dpth * pckWdt - outTemp[bitw]);
-                            // Get the int full precision value 
-                            outTemp[bitw] += packing_offset * dpth;
-                            out += (outTemp[bitw] << (in_bit - bitw - 1));
-                        }
-                        if (out > max_temp) {
-                            max_temp = out;
-                        }*/                        
-                    }
-                    //printf("\n");
-                    //pAct += in_bit * dpth;
+						pIn++;
+					}          
                 }
-                /*
-                // Quantization
-                int int_part = max_temp >> (in_bit) << (16);/// pow(2, in_bit);
-                int frac_part = (mask(in_bit) & max_temp) << (16 - in_bit);
-                //float w = out / 4.0;
-                //printf("%.2f, ", w);
-                //temp = (temp & out) << (16 - in_bit);
-                int out_temp = int_part + frac_part;
-                for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
-                    int temp = out_temp > *threshLoc;
-                    // Shift 
-                    pckTemp[bitw] |= (temp << (pckIdx));
-                    out_temp = (temp ^ (1 & ((*signLoc) >> (pckIdx))) ? out_temp + ((*offsetLoc) >> (bitw + 1)) : out_temp - ((*offsetLoc) >> (bitw + 1)));
-                }
-                threshLoc++;
-                offsetLoc++;
-                // Full output block - write out
-                if (pckIdx == 0) {
-                    for (uint8_t bitw = 0; bitw != out_bit; bitw++) {
-                        *pOut++ = ~(pckTemp[bitw] ^ (*signLoc));
-                    }
-                    signLoc++;
-                    pckIdx = pckWdt - 1;
-                    memset(pckTemp, 0, sizeof(int32_t) * out_bit);
-                }
-                else {
-                    pckIdx--;
-                }*/
-                outCnt--;
-            }            
+            }           
         }
     }
-    printf("pIn set %d times\n", count_pInSet);
 }
 
 
@@ -370,7 +231,7 @@ int testlayer1() {
 	printf("l1act_bin_unrolled_len %d\n", l1act_bin_unrolled_len);
 	pckDtype l1act_bin_unrolled[l1act_bin_unrolled_len];
 	//unRollActivations_old(l1act_bin, C1XY, C1XY, C1Z, C1KXY, C1KXY, input_bw,l1act_bin_unrolled);
-	unRollActivations(l1act_bin, l1act_bin_unrolled, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, input_bw);
+	unRollActivations(l1act_bin, l1act_bin_unrolled, C1Z, C1XY, C1XY, C1KXY, C1KXY, C1PD, C1PL, input_bw);
 
 	//manually setting unrolled input values
 	/*for (int i = 0; i < 4314; i++)
