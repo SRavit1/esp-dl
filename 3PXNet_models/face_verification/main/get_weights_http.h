@@ -61,6 +61,8 @@ struct array readHTTPResponse(int s, char* recv_buf, int recv_buf_size, char* mo
 
     int r;
     do {
+        if (phase == 2) break; //TEMPORARY; Stops data copying to speed up testing
+
         bzero(recv_buf, recv_buf_size);
         r = read(s, recv_buf, sizeof(recv_buf)-1);
         for(int i = 0; i < r; i++) {
@@ -78,7 +80,7 @@ struct array readHTTPResponse(int s, char* recv_buf, int recv_buf_size, char* mo
                     *((int16_t*) (arr.data+data_size*data_counter)) = (int16_t) atoi(curr_val);
                 }
                 else if (strcmp(mode, "pack") == 0) {
-                    printf("Storing at location %p\n", arr.data+data_size*data_counter);
+                    //printf("Storing at location %p\n", arr.data+data_size*data_counter);
                     *((long*) (arr.data+data_size*data_counter)) = strtol(curr_val, NULL, 16);
                 }
 

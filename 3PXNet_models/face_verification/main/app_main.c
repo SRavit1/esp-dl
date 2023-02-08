@@ -32,23 +32,29 @@ void test(void *arg)
 
 static void get_weights(void *pvParameters) {
     while(1) {
+        buffer1 = heap_caps_malloc(1000000, MALLOC_CAP_SPIRAM);
+        buffer2 = heap_caps_malloc(1000000, MALLOC_CAP_SPIRAM);
+        buffer3 = heap_caps_malloc(1000000, MALLOC_CAP_SPIRAM);
+        printf("b1 %p b2 %p b3 %p", buffer1, buffer2, buffer3);
+        
         printf("Largest free block: %zu. Free size: %zu. Minimum free size: %zu.\n", heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM), heap_caps_get_free_size(MALLOC_CAP_SPIRAM), heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM));
 
         //conv1_act_unpacked = http_get_task(WEB_SERVER_, "conv_act_1.npy", WEB_PORT_, "/int", "int");
-        conv1_act_unpacked = heap_caps_malloc(C1XY*C1XY*C1Z*4, MALLOC_CAP_SPIRAM);
+        conv1_act_unpacked = heap_caps_malloc(C1XY*C1XY*C1Z, MALLOC_CAP_SPIRAM);
+        printf("conv1_act_unpacked pointer value %p", conv1_act_unpacked);
         conv1_wgt_unpacked = http_get_task(WEB_SERVER_, "conv_weight_1.npy", WEB_PORT_, "/int", "int");
         conv1_mean = http_get_task(WEB_SERVER_, "mu_1.npy", WEB_PORT_, "/float", "float");
         conv1_var = http_get_task(WEB_SERVER_, "sigma_1.npy", WEB_PORT_, "/float", "float");
         conv1_gamma = http_get_task(WEB_SERVER_, "gamma_1.npy", WEB_PORT_, "/float", "float");
         conv1_beta = http_get_task(WEB_SERVER_, "beta_1.npy", WEB_PORT_, "/float", "float");
 
-        conv2_1_act_unpacked = heap_caps_malloc(C2_1XY*C2_1XY*C2_1Z*4, MALLOC_CAP_SPIRAM); //malloc(4*C2_1XY*C2_1XY*C2_1Z);
+        conv2_1_act_unpacked = heap_caps_malloc(C2_1XY*C2_1XY*C2_1Z, MALLOC_CAP_SPIRAM); //malloc(4*C2_1XY*C2_1XY*C2_1Z);
         conv2_1_act = heap_caps_malloc(C2_1XY*C2_1XY*C2_1Z/8, MALLOC_CAP_SPIRAM);
         conv2_2_act = heap_caps_malloc(C2_2XY*C2_2XY*C2_2Z/8, MALLOC_CAP_SPIRAM);
-        printf("Largest free block: %zu. Free size: %zu. Minimum free size: %zu.\n", heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM), heap_caps_get_free_size(MALLOC_CAP_SPIRAM), heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM));
-        printf("Trying to allocate: %d bytes\n", C2_2OXY*C2_2OXY*C2_2KZ*4);
-        conv2_3_act_unpacked = heap_caps_malloc(C2_2OXY*C2_2OXY*C2_2KZ*4, MALLOC_CAP_SPIRAM);
-        printf("conv2_3_act_unpacked pointer value %p", conv2_3_act_unpacked);
+        //printf("Largest free block: %zu. Free size: %zu. Minimum free size: %zu.\n", heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM), heap_caps_get_free_size(MALLOC_CAP_SPIRAM), heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM));
+        //printf("Trying to allocate: %d bytes\n", C2_2OXY*C2_2OXY*C2_2KZ);
+        conv2_3_act_unpacked = heap_caps_malloc(C2_2OXY*C2_2OXY*C2_2KZ, MALLOC_CAP_SPIRAM);
+        //printf("conv2_3_act_unpacked pointer value %p", conv2_3_act_unpacked);
 
         conv2_3_act = heap_caps_malloc(C2_2OXY*C2_2OXY*C2_2KZ/8, MALLOC_CAP_SPIRAM);
         //conv2_1_wgt = http_get_task(WEB_SERVER_, "conv_weight_2_1.npy", WEB_PORT_, "/pack", "pack");
@@ -57,15 +63,15 @@ static void get_weights(void *pvParameters) {
         conv2_1_sign = http_get_task(WEB_SERVER_, "conv_sign_2_1.npy", WEB_PORT_, "/pack", "pack");
         //conv2_2_wgt = http_get_task(WEB_SERVER_, "conv_weight_2_1.npy", WEB_PORT_, "/pack", "pack");
         conv2_2_wgt = heap_caps_malloc(C2_2KXY*C2_2KXY*C2_2Z*C2_2KZ/8, MALLOC_CAP_SPIRAM);
-        conv2_2_mean = http_get_task(WEB_SERVER_, "mean_2_2.npy", WEB_PORT_, "/float", "float");
+        conv2_2_mean = http_get_task(WEB_SERVER_, "mu_2_2.npy", WEB_PORT_, "/float", "float");
         conv2_2_var = http_get_task(WEB_SERVER_, "sigma_2_2.npy", WEB_PORT_, "/float", "float");
         conv2_2_gamma = http_get_task(WEB_SERVER_, "gamma_2_2.npy", WEB_PORT_, "/float", "float");
         conv2_2_beta = http_get_task(WEB_SERVER_, "beta_2_2.npy", WEB_PORT_, "/float", "float");
 
-        conv3_1_act_unpacked = heap_caps_malloc(C3_1XY*C3_1XY*C3_1Z*4, MALLOC_CAP_SPIRAM); //malloc(4*C3_1XY*C3_1XY*C3_1Z);
+        conv3_1_act_unpacked = heap_caps_malloc(C3_1XY*C3_1XY*C3_1Z, MALLOC_CAP_SPIRAM); //malloc(4*C3_1XY*C3_1XY*C3_1Z);
         conv3_1_act = heap_caps_malloc(C3_1XY*C3_1XY*C3_1Z/8, MALLOC_CAP_SPIRAM);
         conv3_2_act = heap_caps_malloc(C3_2XY*C3_2XY*C3_2Z/8, MALLOC_CAP_SPIRAM);
-        conv3_3_act_unpacked = heap_caps_malloc(C3_2XY*C3_2XY*C3_2Z*4, MALLOC_CAP_SPIRAM);
+        conv3_3_act_unpacked = heap_caps_malloc(C3_2XY*C3_2XY*C3_2Z, MALLOC_CAP_SPIRAM);
         conv3_3_act = heap_caps_malloc(C3_2XY*C3_2XY*C3_2Z/8, MALLOC_CAP_SPIRAM);
         //conv3_1_wgt = http_get_task(WEB_SERVER_, "conv_weight_3_1.npy", WEB_PORT_, "/pack", "pack");
         conv3_1_wgt = heap_caps_malloc(C3_1KXY*C3_1KXY*C3_1Z*C3_1KZ/8, MALLOC_CAP_SPIRAM);
@@ -73,15 +79,15 @@ static void get_weights(void *pvParameters) {
         conv3_1_sign = http_get_task(WEB_SERVER_, "conv_sign_3_1.npy", WEB_PORT_, "/pack", "pack");
         //conv3_2_wgt = http_get_task(WEB_SERVER_, "conv_weight_3_1.npy", WEB_PORT_, "/pack", "pack");
         conv3_2_wgt = heap_caps_malloc(C3_2KXY*C3_2KXY*C3_2Z*C3_2KZ/8, MALLOC_CAP_SPIRAM);
-        conv3_2_mean = http_get_task(WEB_SERVER_, "mean_3_2.npy", WEB_PORT_, "/float", "float");
+        conv3_2_mean = http_get_task(WEB_SERVER_, "mu_3_2.npy", WEB_PORT_, "/float", "float");
         conv3_2_var = http_get_task(WEB_SERVER_, "sigma_3_2.npy", WEB_PORT_, "/float", "float");
         conv3_2_gamma = http_get_task(WEB_SERVER_, "gamma_3_2.npy", WEB_PORT_, "/float", "float");
         conv3_2_beta = http_get_task(WEB_SERVER_, "beta_3_2.npy", WEB_PORT_, "/float", "float");
 
-        conv4_1_act_unpacked = heap_caps_malloc(C4_1XY*C4_1XY*C4_1Z*4, MALLOC_CAP_SPIRAM); //malloc(4*C4_1XY*C4_1XY*C4_1Z);
+        conv4_1_act_unpacked = heap_caps_malloc(C4_1XY*C4_1XY*C4_1Z, MALLOC_CAP_SPIRAM); //malloc(4*C4_1XY*C4_1XY*C4_1Z);
         conv4_1_act = heap_caps_malloc(C4_1XY*C4_1XY*C4_1Z/8, MALLOC_CAP_SPIRAM);
         conv4_2_act = heap_caps_malloc(C4_2XY*C4_2XY*C4_2Z/8, MALLOC_CAP_SPIRAM);
-        conv4_3_act_unpacked = heap_caps_malloc(C4_2XY*C4_2XY*C4_2Z*4, MALLOC_CAP_SPIRAM);
+        conv4_3_act_unpacked = heap_caps_malloc(C4_2XY*C4_2XY*C4_2Z, MALLOC_CAP_SPIRAM);
         conv4_3_act = heap_caps_malloc(C3_2XY*C3_2XY*C3_2Z/8, MALLOC_CAP_SPIRAM);
         //conv4_1_wgt = http_get_task(WEB_SERVER_, "conv_weight_4_1.npy", WEB_PORT_, "/pack", "pack");
         conv4_1_wgt = heap_caps_malloc(C4_1KXY*C4_1KXY*C4_1Z*C4_1KZ/8, MALLOC_CAP_SPIRAM);
@@ -89,23 +95,23 @@ static void get_weights(void *pvParameters) {
         conv4_2_wgt = heap_caps_malloc(C4_2KXY*C4_2KXY*C4_2Z*C4_2KZ/8, MALLOC_CAP_SPIRAM);
         conv4_1_thresh = http_get_task(WEB_SERVER_, "conv_thr_4_1.npy", WEB_PORT_, "/float", "float");
         conv4_1_sign = http_get_task(WEB_SERVER_, "conv_sign_4_1.npy", WEB_PORT_, "/pack", "pack");
-        conv4_2_mean = http_get_task(WEB_SERVER_, "mean_4_2.npy", WEB_PORT_, "/float", "float");
+        conv4_2_mean = http_get_task(WEB_SERVER_, "mu_4_2.npy", WEB_PORT_, "/float", "float");
         conv4_2_var = http_get_task(WEB_SERVER_, "sigma_4_2.npy", WEB_PORT_, "/float", "float");
         conv4_2_gamma = http_get_task(WEB_SERVER_, "gamma_4_2.npy", WEB_PORT_, "/float", "float");
         conv4_2_beta = http_get_task(WEB_SERVER_, "beta_4_2.npy", WEB_PORT_, "/float", "float");
         //TODO : Fix following
-        conv4_d_act_unpacked = heap_caps_malloc(4*C4_dXY*C4_dXY*C4_dZ, MALLOC_CAP_SPIRAM);
+        conv4_d_act_unpacked = heap_caps_malloc(C4_dXY*C4_dXY*C4_dZ, MALLOC_CAP_SPIRAM);
         //conv4_d_wgt = http_get_task(WEB_SERVER_, "conv_weight_4_d.npy", WEB_PORT_, "/pack", "pack");
         conv4_d_wgt = heap_caps_malloc(C4_dKXY*C4_dKXY*C4_dZ*C4_dKZ/8, MALLOC_CAP_SPIRAM);
-        conv4_d_mean = http_get_task(WEB_SERVER_, "mean_4_d.npy", WEB_PORT_, "/float", "float");
+        conv4_d_mean = http_get_task(WEB_SERVER_, "mu_4_d.npy", WEB_PORT_, "/float", "float");
         conv4_d_var = http_get_task(WEB_SERVER_, "sigma_4_d.npy", WEB_PORT_, "/float", "float");
         conv4_d_gamma = http_get_task(WEB_SERVER_, "gamma_4_d.npy", WEB_PORT_, "/float", "float");
         conv4_d_beta = http_get_task(WEB_SERVER_, "beta_4_d.npy", WEB_PORT_, "/float", "float");
 
-        conv5_1_act_unpacked = heap_caps_malloc(4*C5_1XY*C5_1XY*C5_1Z, MALLOC_CAP_SPIRAM); //malloc(4*C5_1XY*C5_1XY*C5_1Z);
+        conv5_1_act_unpacked = heap_caps_malloc(C5_1XY*C5_1XY*C5_1Z, MALLOC_CAP_SPIRAM); //malloc(4*C5_1XY*C5_1XY*C5_1Z);
         conv5_1_act = heap_caps_malloc(C5_1XY*C5_1XY*C5_1Z/32, MALLOC_CAP_SPIRAM);
         conv5_2_act = heap_caps_malloc(C5_2XY*C5_2XY*C5_2Z/32, MALLOC_CAP_SPIRAM);
-        conv5_3_act_unpacked = heap_caps_malloc(4*C5_2XY*C5_2XY*C5_2Z, MALLOC_CAP_SPIRAM);
+        conv5_3_act_unpacked = heap_caps_malloc(C5_2XY*C5_2XY*C5_2Z, MALLOC_CAP_SPIRAM);
         conv5_3_act = heap_caps_malloc(C3_2XY*C3_2XY*C3_2Z/32, MALLOC_CAP_SPIRAM);
         //conv5_1_wgt = http_get_task(WEB_SERVER_, "conv_weight_5_1.npy", WEB_PORT_, "/pack", "pack");
         conv5_1_wgt = heap_caps_malloc(C5_1KXY*C5_1KXY*C5_1Z*C5_1KZ/8, MALLOC_CAP_SPIRAM);
@@ -113,7 +119,7 @@ static void get_weights(void *pvParameters) {
         conv5_1_sign = http_get_task(WEB_SERVER_, "conv_sign_5_1.npy", WEB_PORT_, "/pack", "pack");
         //conv5_2_wgt = http_get_task(WEB_SERVER_, "conv_weight_5_1.npy", WEB_PORT_, "/pack", "pack");
         conv5_2_wgt = heap_caps_malloc(C5_2KXY*C5_2KXY*C5_2Z*C5_2KZ/8, MALLOC_CAP_SPIRAM);
-        conv5_2_mean = http_get_task(WEB_SERVER_, "mean_5_2.npy", WEB_PORT_, "/float", "float");
+        conv5_2_mean = http_get_task(WEB_SERVER_, "mu_5_2.npy", WEB_PORT_, "/float", "float");
         conv5_2_var = http_get_task(WEB_SERVER_, "sigma_5_2.npy", WEB_PORT_, "/float", "float");
         conv5_2_gamma = http_get_task(WEB_SERVER_, "gamma_5_2.npy", WEB_PORT_, "/float", "float");
         conv5_2_beta = http_get_task(WEB_SERVER_, "beta_5_2.npy", WEB_PORT_, "/float", "float");
@@ -122,12 +128,18 @@ static void get_weights(void *pvParameters) {
         fc_wgt = heap_caps_malloc(F1I*F1O/pckWdt, MALLOC_CAP_SPIRAM);
         fc_out = heap_caps_malloc(4*F1O, MALLOC_CAP_SPIRAM);
 
-
+        
+        ESP_LOGI(TAG, "Beginning forward pass");
         int64_t start = esp_timer_get_time();
         forward();
         int64_t finish = esp_timer_get_time();
+        ESP_LOGI(TAG, "Finishing forward pass");
 
         ESP_LOGI(TAG, "forward duration (microseconds): %f", ((float)(finish-start)));
+
+        free(buffer1);
+        free(buffer2);
+        free(buffer3);
 
         free(conv1_wgt_unpacked);
         free(conv2_1_act_unpacked);
