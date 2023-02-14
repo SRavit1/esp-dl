@@ -41,7 +41,7 @@ struct array {
     int n;
 };
 
-struct array readHTTPResponse(int s, char* recv_buf, int recv_buf_size, char* mode) {
+struct array readHTTPResponse(int s, char* recv_buf, int recv_buf_size, char* mode, void *data_ptr) {
     const int curr_val_size = 10;
     char curr_val[curr_val_size];
     unsigned int curr_val_counter = 0;
@@ -72,8 +72,8 @@ struct array readHTTPResponse(int s, char* recv_buf, int recv_buf_size, char* mo
             } else if (c == ' ' && phase == 1) {//size finished; now allocate data
                 phase++;
                 arr.n = size;
-                arr.data = heap_caps_malloc(data_size*size, MALLOC_CAP_SPIRAM); //malloc(data_size*size);
-                printf("Allocating %s array of len %d at PSRAM location %p\n", mode, size, arr.data);
+                arr.data = data_ptr; //heap_caps_malloc(data_size*size, MALLOC_CAP_SPIRAM); //malloc(data_size*size);
+                printf("Filling %s array of len %d at PSRAM location %p\n", mode, size, arr.data);
             } else if (c == ',' && phase == 2) {
                 if (strcmp(mode, "float") == 0) *((float*) (arr.data+data_size*data_counter)) = atof(curr_val);
                 else if (strcmp(mode, "int") == 0) {
@@ -107,7 +107,7 @@ struct array readHTTPResponse(int s, char* recv_buf, int recv_buf_size, char* mo
     return arr;
 }
 
-static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, char *WEB_PATH, char* mode)
+static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, char *WEB_PATH, char* mode, void **weight_buffer)
 {
     //const char *REQUEST = strcat(strcat("GET ", strcat(WEB_PATH, strcat(" HTTP/1.0\r\nHost: ", strcat(WEB_SERVER, strcat(":", strcat(WEB_PORT, strcat("\r\n", strcat("User-Agent: esp-idf/1.0 esp32\r\n", "\r\n")))))))));
     char REQUEST[1000];
@@ -179,7 +179,10 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
     //ESP_LOGI(TAG, "... set socket receiving timeout success");
 
     /* Read HTTP response */
-    arr = readHTTPResponse(s, recv_buf, sizeof(recv_buf), mode);
+    printf("%s: ", ARGUMENT);
+    arr = readHTTPResponse(s, recv_buf, sizeof(recv_buf), mode, *weight_buffer);
+    *weight_buffer += arr.n;
+
     /*
     if (strcmp(mode, "float") == 0) {
         float *data = (float*) arr.data;
