@@ -30,8 +30,8 @@
 */
 
 //#define WEB_SERVER_ "192.168.1.46"
-//#define WEB_SERVER_ "164.67.211.125"
-#define WEB_SERVER_ "192.168.157.196"
+//#define WEB_SERVER_ "164.67.211.10"
+#define WEB_SERVER_ "192.168.204.196"
 #define WEB_PORT_ "5000"
 
 static const char *TAG = "example";
@@ -98,11 +98,11 @@ struct array readHTTPResponse(int s, char* recv_buf, int recv_buf_size, char* mo
             }
             //putchar(c);
         }
-        if (counter % 1000 == 0) printf("Received %d segment of data.\n", counter);
+        //if (counter % 1000 == 0) printf("Received %d segment of data.\n", counter);
         counter ++;
 
     } while(r > 0);
-    ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d.", r, errno);
+    //ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d.", r, errno);
 
     return arr;
 }
@@ -136,7 +136,7 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
 
         Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
     addr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
-    ESP_LOGI(TAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
+    //ESP_LOGI(TAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
 
     s = socket(res->ai_family, res->ai_socktype, 0);
     if(s < 0) {
@@ -145,7 +145,7 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         return 0;
     }
-    ESP_LOGI(TAG, "... allocated socket");
+    //ESP_LOGI(TAG, "... allocated socket");
 
     if(connect(s, res->ai_addr, res->ai_addrlen) != 0) {
         ESP_LOGE(TAG, "... socket connect failed errno=%d", errno);
@@ -155,7 +155,7 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
         return 0;
     }
 
-    ESP_LOGI(TAG, "... connected");
+    //ESP_LOGI(TAG, "... connected");
     freeaddrinfo(res);
 
     if (write(s, REQUEST, strlen(REQUEST)) < 0) {
@@ -164,7 +164,7 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
         vTaskDelay(4000 / portTICK_PERIOD_MS);
         return 0;
     }
-    ESP_LOGI(TAG, "... socket send success");
+    //ESP_LOGI(TAG, "... socket send success");
 
     struct timeval receiving_timeout;
     receiving_timeout.tv_sec = 5;
@@ -176,7 +176,7 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
         vTaskDelay(4000 / portTICK_PERIOD_MS);
         return 0;
     }
-    ESP_LOGI(TAG, "... set socket receiving timeout success");
+    //ESP_LOGI(TAG, "... set socket receiving timeout success");
 
     /* Read HTTP response */
     arr = readHTTPResponse(s, recv_buf, sizeof(recv_buf), mode);
@@ -205,10 +205,10 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
     close(s);
     /*
     for(int countdown = 10; countdown >= 0; countdown--) {
-        ESP_LOGI(TAG, "%d... ", countdown);
+        //ESP_LOGI(TAG, "%d... ", countdown);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-    ESP_LOGI(TAG, "Starting again!");
+    //ESP_LOGI(TAG, "Starting again!");
     */
     
     return arr.data;
