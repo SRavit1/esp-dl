@@ -184,6 +184,7 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
     *weight_buffer += arr.n;
 
     /*
+    //For debugging
     if (strcmp(mode, "float") == 0) {
         float *data = (float*) arr.data;
         for (int i = 0; i < arr.n; i++) {
@@ -215,4 +216,68 @@ static void* http_get_task(char *WEB_SERVER, char *ARGUMENT, char *WEB_PORT, cha
     */
     
     return arr.data;
+}
+
+void initialize_weights_buffers() {
+    buffer1 = heap_caps_malloc(1000000, MALLOC_CAP_SPIRAM);
+    buffer2 = heap_caps_malloc(1000000, MALLOC_CAP_SPIRAM);
+    buffer3 = heap_caps_malloc(1000000, MALLOC_CAP_SPIRAM);
+    weight_buffer = heap_caps_malloc(800000, MALLOC_CAP_SPIRAM);
+
+    printf("b1 %p b2 %p b3 %p weight %p.\n", buffer1, buffer2, buffer3, weight_buffer);
+    printf("Largest free block: %zu. Free size: %zu. Minimum free size: %zu.\n", heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM), heap_caps_get_free_size(MALLOC_CAP_SPIRAM), heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM));
+
+    void *weight_buffer_copy = weight_buffer;
+
+    conv4_2_wgt = http_get_task(WEB_SERVER_, "conv_weight_4_2.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv5_1_wgt = http_get_task(WEB_SERVER_, "conv_weight_5_1.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv5_2_wgt = http_get_task(WEB_SERVER_, "conv_weight_5_2.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv1_wgt_unpacked = http_get_task(WEB_SERVER_, "conv_weight_1.npy", WEB_PORT_, "/int", "int", &weight_buffer_copy);
+    conv2_1_wgt = http_get_task(WEB_SERVER_, "conv_weight_2_1.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv2_2_wgt = http_get_task(WEB_SERVER_, "conv_weight_2_2.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv3_1_wgt = http_get_task(WEB_SERVER_, "conv_weight_3_1.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv3_2_wgt = http_get_task(WEB_SERVER_, "conv_weight_3_2.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv4_1_wgt = http_get_task(WEB_SERVER_, "conv_weight_4_1.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv4_d_wgt = http_get_task(WEB_SERVER_, "conv_weight_4_d.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    fc_wgt = heap_caps_malloc(F1I*F1O/pckWdt, MALLOC_CAP_SPIRAM);
+
+    conv1_mean = http_get_task(WEB_SERVER_, "mu_1.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv1_var = http_get_task(WEB_SERVER_, "sigma_1.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv1_gamma = http_get_task(WEB_SERVER_, "gamma_1.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv1_beta = http_get_task(WEB_SERVER_, "beta_1.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv2_1_thresh = http_get_task(WEB_SERVER_, "conv_thr_2_1.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv2_1_sign = http_get_task(WEB_SERVER_, "conv_sign_2_1.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv2_2_mean = http_get_task(WEB_SERVER_, "mu_2_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv2_2_var = http_get_task(WEB_SERVER_, "sigma_2_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv2_2_gamma = http_get_task(WEB_SERVER_, "gamma_2_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv2_2_beta = http_get_task(WEB_SERVER_, "beta_2_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv3_1_thresh = http_get_task(WEB_SERVER_, "conv_thr_3_1.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv3_1_sign = http_get_task(WEB_SERVER_, "conv_sign_3_1.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv3_2_mean = http_get_task(WEB_SERVER_, "mu_3_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv3_2_var = http_get_task(WEB_SERVER_, "sigma_3_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv3_2_gamma = http_get_task(WEB_SERVER_, "gamma_3_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv3_2_beta = http_get_task(WEB_SERVER_, "beta_3_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_1_thresh = http_get_task(WEB_SERVER_, "conv_thr_4_1.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_1_sign = http_get_task(WEB_SERVER_, "conv_sign_4_1.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv4_2_mean = http_get_task(WEB_SERVER_, "mu_4_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_2_var = http_get_task(WEB_SERVER_, "sigma_4_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_2_gamma = http_get_task(WEB_SERVER_, "gamma_4_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_2_beta = http_get_task(WEB_SERVER_, "beta_4_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_d_mean = http_get_task(WEB_SERVER_, "mu_4_d.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_d_var = http_get_task(WEB_SERVER_, "sigma_4_d.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_d_gamma = http_get_task(WEB_SERVER_, "gamma_4_d.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv4_d_beta = http_get_task(WEB_SERVER_, "beta_4_d.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv5_1_thresh = http_get_task(WEB_SERVER_, "conv_thr_5_1.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv5_1_sign = http_get_task(WEB_SERVER_, "conv_sign_5_1.npy", WEB_PORT_, "/pack", "pack", &weight_buffer_copy);
+    conv5_2_mean = http_get_task(WEB_SERVER_, "mu_5_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv5_2_var = http_get_task(WEB_SERVER_, "sigma_5_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv5_2_gamma = http_get_task(WEB_SERVER_, "gamma_5_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+    conv5_2_beta = http_get_task(WEB_SERVER_, "beta_5_2.npy", WEB_PORT_, "/float", "float", &weight_buffer_copy);
+}
+
+void cleanup_buffers() {
+    free(buffer1);
+    free(buffer2);
+    free(buffer3);
+    free(weight_buffer);
 }
