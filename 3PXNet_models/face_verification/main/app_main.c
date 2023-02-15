@@ -20,21 +20,18 @@
 #include "resnet10_xnor.c"
 #include "get_weights_http.h"
 
-/*void test(void *arg)
-{
-    while(1)
-    {
-        main();
-
-        vTaskDelay(100);
-    }
-}*/
-
 static void task(void *pvParameters) {
     while(1) {        
+        //copy conv1_act_unpacked to buffer1
+        //printf("Memcpy arguments %p %p %d", buffer1, conv1_act_unpacked, C1XY*C1XY*C1Z);
+        //fflush(stdout);
+        //memcpy(buffer1, conv1_act_unpacked, C1XY*C1XY*C1Z);
+
         ESP_LOGI(TAG, "Beginning forward pass");
         int64_t start = esp_timer_get_time();
+        
         forward();
+        
         int64_t finish = esp_timer_get_time();
         ESP_LOGI(TAG, "Finishing forward pass");
 

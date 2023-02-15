@@ -154,6 +154,7 @@ struct convolutional_block_conf {
    uint8_t C_dKXY; uint8_t C_dKZ; uint8_t C_dPD; uint8_t C_dPL; uint8_t C_dOXY;
 };
 
+//output: C_3_act_unpacked
 void identity_block(struct identity_block_conf s)
 {
    pack_int8(s.C_1_act_unpacked, s.C_1_act, s.C_1XY*s.C_1XY*s.C_1Z);
@@ -178,6 +179,7 @@ void identity_block(struct identity_block_conf s)
    //printFloatArray(s.C_3_act_unpacked+s.C_2OXY*s.C_2OXY*s.C_2KZ-20, 20);
 }
 
+//output: C_3_act_unpacked
 void convolutional_block(struct convolutional_block_conf s)
 {
    pack_int8(s.C_1_act_unpacked, s.C_1_act, s.C_1XY*s.C_1XY*s.C_1Z);
