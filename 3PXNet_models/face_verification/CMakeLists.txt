@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_examples_common)
+#set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_examples_common)
 
 # -O3 -std=c99 -lm -g -ffloat-store -mpopcnt  -DPCK32 -DARCH64 -DGCC -DPCNTSW
 idf_build_set_property(COMPILE_OPTIONS -O3 APPEND)

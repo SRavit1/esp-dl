@@ -18,11 +18,9 @@ set(COMPONENT_ADD_INCLUDEDIRS
     ../3pxnet-inference-library/xnor
     )
 
-set(COMPONENT_ADD_LDFRAGMENTS "/home/ravit/Documents/NanoCAD/esp-eye/esp-eye-development/Projects/esp-dl/3PXNet_models/face_verification/main/linker_fragment_file.lf")
+#set(COMPONENT_ADD_LDFRAGMENTS "/home/ravit/Documents/NanoCAD/esp-eye/esp-eye-development/Projects/esp-dl/3PXNet_models/face_verification/main/linker_fragment_file.lf")
 
 register_component()
 
 target_link_libraries(${COMPONENT_TARGET} "-L ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib")
-target_link_libraries(${COMPONENT_TARGET} dl)
-#target_link_libraries(${COMPONENT_TARGET} "-L ${CMAKE_CURRENT_SOURCE_DIR}/../3pxnet-inference-library")
-#target_link_libraries(${COMPONENT_TARGET} 3pxnet-inference-library)
+#target_link_libraries(${COMPONENT_TARGET} dl)

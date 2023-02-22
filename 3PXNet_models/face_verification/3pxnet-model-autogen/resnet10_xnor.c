@@ -59,9 +59,6 @@
 #define ESP
 #endif
 
-//static int16_t conv1_act_unpacked[C1XY*C1XY*C1Z] = input_1;
-
-//pingpong buffer implementation
 void forward() {
    struct identity_block_conf block2_conf = {.C_1_act_unpacked= buffer2, .C_1_act= buffer3, .C_2_act= buffer1, .C_3_act_unpacked= buffer3, .C_1_wgt= conv2_1_wgt, .C_2_wgt= conv2_2_wgt, .C_2_mean= conv2_2_mean, .C_2_var= conv2_2_var, .C_2_gamma= conv2_2_gamma, .C_2_beta= conv2_2_beta, .C_1_thresh= conv2_1_thresh, .C_1_sign= conv2_1_sign, .C_1XY= C2_1XY, .C_1Z= C2_1Z, .C_1KXY= C2_1KXY, .C_1KZ= C2_1KZ, .C_1PD= C2_1PD, .C_1PL= C2_1PL, .C_2XY= C2_2XY, .C_2Z= C2_2Z, .C_2KXY= C2_2KXY, .C_2KZ= C2_2KZ, .C_2PD= C2_2PD, .C_2PL= C2_2PL, .C_2OXY= C2_2OXY};
    struct identity_block_conf block3_conf = {.C_1_act_unpacked= buffer3, .C_1_act= buffer1, .C_2_act= buffer2, .C_3_act_unpacked= buffer1, .C_1_wgt= conv3_1_wgt, .C_2_wgt= conv3_2_wgt, .C_2_mean= conv3_2_mean, .C_2_var= conv3_2_var, .C_2_gamma= conv3_2_gamma, .C_2_beta= conv3_2_beta, .C_1_thresh= conv3_1_thresh, .C_1_sign= conv3_1_sign, .C_1XY= C3_1XY, .C_1Z= C3_1Z, .C_1KXY= C3_1KXY, .C_1KZ= C3_1KZ, .C_1PD= C3_1PD, .C_1PL= C3_1PL, .C_2XY= C3_2XY, .C_2Z= C3_2Z, .C_2KXY= C3_2KXY, .C_2KZ= C3_2KZ, .C_2PD= C3_2PD, .C_2PL= C3_2PL, .C_2OXY= C3_2OXY};
