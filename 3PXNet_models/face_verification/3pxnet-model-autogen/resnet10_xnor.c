@@ -73,12 +73,14 @@ void forward() {
    s1 = esp_timer_get_time();
    #endif
    
-   refCn_bwn(buffer1, conv1_wgt_unpacked, C1Z, C1XY, C1XY, C1KXY, C1KXY, C1KZ, buffer2, C1PL, conv1_mean, conv1_var, conv1_gamma, conv1_beta);
-   
+   //refCn_bwn(buffer1, conv1_wgt_unpacked, C1Z, C1XY, C1XY, C1KXY, C1KXY, C1KZ, buffer2, C1PL, conv1_mean, conv1_var, conv1_gamma, conv1_beta);
+   //conv1_wgt_unpacked should be conv1_wgt
+   //CnBnMulti(buffer1, conv1_wgt_unpacked, C1Z, C1XY, C1XY, C1Z, C1KXY, C1KXY, C1KZ, C1PD, C1PL, buffer2, conv1_thresh, conv1_sign, 3, 1);
+
    #ifdef ESP
    s2 = esp_timer_get_time();
    printf("first layer (mus): %f\n", ((float)(s2-s1)));
-   fflush(stdout);
+   //fflush(stdout);
    s1 = s2;
    //printFloatArray(buffer2, 100);
    #endif
@@ -88,7 +90,7 @@ void forward() {
    #ifdef ESP
    s2 = esp_timer_get_time();
    printf("second block (mus): %f\n", ((float)(s2-s1)));
-   fflush(stdout);
+   //fflush(stdout);
    s1 = s2;
    //printFloatArray(buffer3, 100);
    #endif
@@ -98,7 +100,7 @@ void forward() {
    #ifdef ESP
    s2 = esp_timer_get_time();
    printf("third block (mus): %f\n", ((float)(s2-s1)));
-   fflush(stdout);
+   //fflush(stdout);
    s1 = s2;
    //printFloatArray(buffer1, 100);
    #endif
@@ -108,7 +110,7 @@ void forward() {
    #ifdef ESP
    s2 = esp_timer_get_time();
    printf("fourth block (mus): %f\n", ((float)(s2-s1)));
-   fflush(stdout);
+   //fflush(stdout);
    s1 = s2;
    //printFloatArray(buffer3, 100);
    #endif
@@ -118,7 +120,7 @@ void forward() {
    #ifdef ESP
    s2 = esp_timer_get_time();
    printf("fifth layer (mus): %f\n", ((float)(s2-s1)));
-   fflush(stdout);
+   //fflush(stdout);
    s1 = s2;
    //printFloatArray(buffer1, 100);
    #endif
@@ -134,7 +136,7 @@ void forward() {
    #ifdef ESP
    s2 = esp_timer_get_time();
    printf("last layer (mus): %f\n", ((float)(s2-s1)));
-   fflush(stdout);
+   //fflush(stdout);
    s1 = s2;
    #endif
 }
