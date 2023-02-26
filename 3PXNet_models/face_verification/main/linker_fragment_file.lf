@@ -1,4 +1,0 @@
-[mapping]
-archive: libmain.a
-entries:
-	* (extram_bss)
